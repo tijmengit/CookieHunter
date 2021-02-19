@@ -34,6 +34,10 @@ class BrowserLogin:
         # button.click()
 
     def email_el(self):
+        '''
+        Searches page set on browser for email html element
+        :return: email input field
+        '''
         email = None
         try:
             email = self.browser.find_element_by_id('email')
@@ -42,6 +46,10 @@ class BrowserLogin:
         return email
 
     def pwd_el(self):
+        '''
+        Searches page set on browser for password html element
+        :return: password input field
+        '''
         pwd = None
         try:
             pwd = self.browser.find_element_by_id('password')
@@ -50,6 +58,11 @@ class BrowserLogin:
         return pwd
 
     def name_el(self):
+        '''
+        Searches page set on browser for name html element
+        :return: input field for name
+        '''
+        # TODO: split into first and last name
         name = None
         try:
             name = self.browser.find_element_by_id('name')
@@ -65,6 +78,7 @@ if __name__ == "__main__":
     PATH = "/usr/local/sbin/chromedriver"
     # browser = BrowserLogin(home_url=home_url, login_url=login_url, register_url=register_url, driver_path=PATH)
     # browser.register()
+
     with open('data/sites.json') as sites_file:
         sites = json.load(sites_file)
         for site in sites:
