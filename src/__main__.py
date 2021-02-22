@@ -4,8 +4,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 import json
 import os
-class BrowserLogin:
-
+class Browser:
 
     def __init__(self, home_url, login_url, register_url, driver_path):
         self.browser = webdriver.Chrome(driver_path)
@@ -16,7 +15,7 @@ class BrowserLogin:
         # Credentials
         self.email_address = "cookiehunterproject@gmail.com"
         self.pwd = "passwordRandom123!"
-        self.name = "Cookie Hunter"
+        self.name = "Jan Janssen"
         self.username = "CookieHunter007"
         self.email_synonyms = ['user_email', 'email', 'e_mail', 'useremail', 'userEmail', 'mail', 'uemail',
                          'User_email', 'Email', 'E_mail', 'Useremail', 'UserEmail', 'Mail', 'Uemail',
@@ -28,7 +27,7 @@ class BrowserLogin:
                          ]
         self.name_synonyms = ['name_first', 'name', 'first_name', 'firstname', 'First_Name', 'f_name', 'firstName',
                                'User_efirstname', 'First_name', 'first_Name', 'NAME', 'F_NAME', 'FName',
-                               'fname_', '_firstname', 'fullname', 'full_name',
+                               'fname_', '_firstname', 'fullname', 'full_name','user_first_name'
                                ]
         self.username_synonyms = ['username', 'uname', 'user_id', 'user_name', 'uName', 'u_Name', 'UserName',
                                'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]'
@@ -64,6 +63,21 @@ class BrowserLogin:
         # button = browser.findElement(By.xpath("//button[text()='Sign up']")).click();
         # button.click()
 
+    def login(self):
+        self.browser.get((self.login_url))
+        email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
+        if email is not None:
+            email.send_keys(self.email_address)
+        pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
+        if pwd is not None:
+            pwd.send_keys(self.pwd)
+
+        pwd.submit()
+
+    def login_oracle(self):
+        logged_in = self.name in self.browser.page_source
+        return logged_in
+
     def generic_element_finder(self, x_path_text, text_list):
         element = None
         try:
@@ -91,17 +105,18 @@ class BrowserLogin:
 
 if __name__ == "__main__":
     home_url = ""
-    login_url = ""
-    register_url = 'https://www.mentimeter.com/signup'
+    login_url = "https://www.goodreads.com/user/sign_in"
+    register_url = "https://www.goodreads.com/user/sign_up"
     PATH = "/usr/local/sbin/chromedriver"
-    # browser = BrowserLogin(home_url=home_url, login_url=login_url, register_url=register_url, driver_path=PATH)
+    browser = Browser(home_url=home_url, login_url=login_url, register_url=register_url, driver_path=PATH)
     # browser.register()
-
-    with open('../data/sites.json') as sites_file:
-        sites = json.load(sites_file)
-        for site in sites:
-            browser = BrowserLogin(home_url=site['home_url'], login_url=site['login_url'], register_url=site['register_url'], driver_path=PATH)
-            browser.register()
+    browser.login()
+    browser.login_oracle()
+    # with open('../data/sites.json') as sites_file:
+    #     sites = json.load(sites_file)
+    #     for site in sites:
+    #         browser = Browser(home_url=site['home_url'], login_url=site['login_url'], register_url=site['register_url'], driver_path=PATH)
+    #         browser.register()
 
 
 
