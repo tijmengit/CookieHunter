@@ -1,5 +1,7 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+
+
 class Browser:
 
     def __init__(self, home_url, login_url, register_url, driver_path):
@@ -14,20 +16,21 @@ class Browser:
         self.name = "Jan Janssen"
         self.username = "CookieHunter007"
         self.email_synonyms = ['user_email', 'email', 'e_mail', 'useremail', 'userEmail', 'mail', 'uemail',
-                         'User_email', 'Email', 'E_mail', 'Useremail', 'UserEmail', 'Mail', 'Uemail',
-                         'User_email_address', 'Email_address', 'email_address', 'emailadress', 'UserEmailAddress',
-                         'MailAdress'
-                         ]
+                               'User_email', 'Email', 'E_mail', 'Useremail', 'UserEmail', 'Mail', 'Uemail',
+                               'User_email_address', 'Email_address', 'email_address', 'emailadress',
+                               'UserEmailAddress',
+                               'MailAdress'
+                               ]
         self.password_synonyms = ['user_password', 'password', 'pword', 'userpassword', 'userpwd', 'pwd', 'PWD',
-                         'u_password', 'passw', 'p_word', 'UserPassword', 'UserPwd', 'Pwd', 'pass',
-                         ]
+                                  'u_password', 'passw', 'p_word', 'UserPassword', 'UserPwd', 'Pwd', 'pass',
+                                  ]
         self.name_synonyms = ['name_first', 'name', 'first_name', 'firstname', 'First_Name', 'f_name', 'firstName',
-                               'User_efirstname', 'First_name', 'first_Name', 'NAME', 'F_NAME', 'FName',
-                               'fname_', '_firstname', 'fullname', 'full_name','user_first_name'
-                               ]
+                              'User_efirstname', 'First_name', 'first_Name', 'NAME', 'F_NAME', 'FName',
+                              'fname_', '_firstname', 'fullname', 'full_name', 'user_first_name'
+                              ]
         self.username_synonyms = ['username', 'uname', 'user_id', 'user_name', 'uName', 'u_Name', 'UserName',
-                               'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]'
-                               ]
+                                  'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]'
+                                  ]
 
     def register(self):
         self.browser.get((self.register_url))
@@ -74,6 +77,9 @@ class Browser:
         logged_in = self.name in self.browser.page_source
         return logged_in
 
+    def refresh(self):
+        self.browser.refresh()
+
     def generic_element_finder(self, x_path_text, text_list):
         element = None
         try:
@@ -97,3 +103,30 @@ class Browser:
                 pass
 
         return element
+
+    def get_cookies(self):
+        return self.browser.get_cookies()
+
+    def set_cookies(self, cookies):
+        return
+
+    def add_cookie(self, cookie):
+        self.browser.add_cookie(cookie)
+
+    def delete_cookies(self, cookies=[]):
+        if not cookies:
+            self.browser.delete_all_cookies()
+        else:
+            for cookie in cookies:
+                self.delete_cookie(cookie)
+
+    def delete_cookie(self, cookie):
+        if type(cookie) is dict:
+            cookie = cookie['name']
+        self.browser.delete_cookie(cookie)
+
+    def get_driver(self):
+        return self.browser
+
+    def close(self):
+        self.browser.quit()

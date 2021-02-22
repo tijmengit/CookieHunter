@@ -1,20 +1,27 @@
-from selenium import webdriver
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-import json
-import os
-from CookieHunter.src.Browser import *
+
+import sys
+import traceback
+from Browser import *
+from CookieAuditor import *
 
 if __name__ == "__main__":
     home_url = ""
     login_url = "https://www.goodreads.com/user/sign_in"
     register_url = "https://www.goodreads.com/user/sign_up"
-    PATH = "/usr/local/sbin/chromedriver"
+    PATH = os.getenv(
+        "LOCALAPPDATA") + "/ChromeDriver/chromedriver" if platform.system() == "Windows" else "/usr/local/sbin/chromedriver"
     browser = Browser(home_url=home_url, login_url=login_url, register_url=register_url, driver_path=PATH)
-    # browser.register()
-    browser.login()
-    print("Login oracle says: ", browser.login_oracle())
+
+    try:
+        # browser.register()
+        browser.login()
+        c_auditor = CookieAuditor(browser)
+        vulnerable = c_auditor.findVulnerableCookies()
+        print(vulnerable)
+        browser.close()
+    except:
+        traceback.print_exc()
+        browser.close()
 
 
     # with open('../data/sites.json') as sites_file:
@@ -22,6 +29,3 @@ if __name__ == "__main__":
     #     for site in sites:
     #         browser = Browser(home_url=site['home_url'], login_url=site['login_url'], register_url=site['register_url'], driver_path=PATH)
     #         browser.register()
-
-
-
