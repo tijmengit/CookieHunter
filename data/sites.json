@@ -1,7 +1,8 @@
 [{
   "home_url": "",
-  "login_url": "",
-  "register_url": "https://create.piktochart.com/users/sign_up"
+  "login_url": "https://create.piktochart.com/",
+  "register_url": "https://create.piktochart.com/users/sign_up",
+  "captcha": "True"
 },{
   "home_url": "https://web.hypothes.is/",
   "login_url": "https://hypothes.is/login",
@@ -15,6 +16,11 @@
   "home_url": "",
   "login_url": "",
   "register_url": "https://www.mentimeter.com/signup"
-}
+},
+  {
+    "home_url": "",
+    "login_url": "https://www.goodreads.com/user/sign_in",
+    "register_url": "https://www.goodreads.com/user/sign_up"
+  }
 ]
 
