@@ -11,7 +11,7 @@ from pprint import pprint
 
 class PrivacyAuditor:
     keywords = []
-    ignore = ['stories', 'blog', 'forum', 'campaigns']
+    ignore = ['logout', 'login', 'register', 'stories', 'blog', 'forum', 'campaigns']
 
     def __init__(self, driver_path: str, base_url: str, cookies: List[Dict[str, str]], auth: bool,
                  browser_options: List[str]):
@@ -24,21 +24,27 @@ class PrivacyAuditor:
             self.browser_options.add_argument(option)
 
     def audit(self):
-        depth = 2
+        depth = 1
         without_cookies = self.get_sitemap(False, depth)
-        # with_cookies = self.get_sitemap(True, depth)
-        pprint(without_cookies)
+        with_cookies = self.get_sitemap(True, depth)
+        pprint(set(with_cookies) - set(without_cookies))
 
     def get_sitemap(self, use_cookies: bool, depth: int):
+        pprint(f'Fetching sitemap for {self.base_url} with{"out" if not use_cookies else ""} cookies...')
         browser = webdriver.Chrome(self.driver_path, options=self.browser_options)
         base = urlparse.urlparse(self.base_url).netloc
 
         if use_cookies:
-            # TODO implement cookies
-            pass
+            browser.get(self.base_url)
+            for cookie in self.cookies:
+                browser.delete_cookie(cookie['name'])
+                browser.add_cookie(cookie)
+            browser.refresh()
 
         queue = [(self.base_url, 0)]
         found = [self.base_url]
+
+        # TODO fix to ignore pages like productlists (e.g. "https://something.com/products/<id:0-9999999999>")
 
         while queue:
             url = queue.pop(0)
@@ -57,23 +63,26 @@ class PrivacyAuditor:
                     queue.append((l, url[1] + 1))
                     queue = sorted(queue, key=lambda x: x[1])
 
+        browser.quit()
         return found
 
 
 if __name__ == '__main__':
     PATH = os.getenv(
         'LOCALAPPDATA') + '/ChromeDriver/chromedriver' if platform.system() == 'Windows' else '/usr/local/sbin/chromedriver'
-    url = 'https://www.mentimeter.com/'
+    url = 'https://www.goodreads.com/'
     stolen_cookies = [
-        {'name': '__cfduid', 'value': 'd8d0380127035d527efb231fa6e483cee1613910986'},
-        {'name': 'data-split-country', 'value': 'NL'},
-        {'name': 'intercom-session-g5fg6k76',
-         'value': 'NFZQWWlsd2NkYnF5UUV4TUNqdnVoSTlRaDBCMVJZWjlabjJ6bld6TnlnWVluUWhCdndkUCt5cDFBSlRWbGNCdC0tVjFPUjRqYjFYa2tKaDVEcG96Q1R1QT09--d4b9b4e8806237342f49fda839d8fd8e99f03645'},
-        {'name': 'intercom-id-g5fg6k76', 'value': '34818d21-8bec-4409-a0f5-d168fa0ea11b'},
-        {'name': 'visitor_token',
-         'value': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ2aXNpdG9yS2V5IjoiMTg4NjUxODAtZTZjMi00MzNiLWE1NzEtYjg1MjZhYzMyNjUzIiwiaWF0IjoxNjEzOTEwOTg2fQ.kjd_svnGsaq6ai5_1EtBAoy7lMcavtnCmLfKMYBmNcM'},
-        {'name': '_dd_s', 'value': 'rum=0&expire=1613911966371'},
+        {'name': '_session_id2', 'value': 'dad38f1f6290312d962baae42e7e3aec', 'domain': 'www.goodreads.com'},
+        {'name': 'locale', 'value': 'en', 'domain': 'www.goodreads.com'},
+        {'name': 'logged_out_browsing_page_count', 'value': '2', 'domain': 'www.goodreads.com'},
+        {'name': 'cssid', 'value': '848-2350035-9701439', 'domain': 'www.goodreads.com'},
     ]
 
-    auditor = PrivacyAuditor(PATH, url, stolen_cookies, True, ['--headless'])
+    options = ['--headless']
+    options = []
+
+    auth = True
+    auth = False
+
+    auditor = PrivacyAuditor(PATH, url, stolen_cookies, auth, options)
     auditor.audit()
