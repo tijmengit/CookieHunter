@@ -46,6 +46,29 @@ class CookieAuditor:
 
         return vulnerable
 
+    def findAuthCookies(self):
+        # Retrieve Cookies
+        cookie_list = self.browser.get_cookies()
+
+        # Initialization from bottom and top, starting with full set and with single cookies
+        # There will be 2 skipping sets which will be compared with to check if a set still has to be evaluated or not
+        # e.g. if Cookie A is sufficient enough to login, every other set including A can be skipped: A -> skip_enabling_set
+        # e.g. if we have 4 Cookies A,B,C,D and A,B,C is not sufficient enough to login implies that we need D to login
+        # --> D will be put in skip_disabling_set and if a set does not contain at least 1 elem in that set can be skipped as well
+        poset_bottom = cookie_list.copy()
+        poset_top = [cookie_list.copy()]
+        skip_enabling_set = []
+        skip_disabling_set = []
+
+        # This would be the first round - will make it recursive
+        for i in poset_bottom:
+            print(i)
+            print(self.__evaluate_cookies(i))
+        for j in poset_top:
+            print(j)
+            print(self.__evaluate_cookies(j))
+
+
     def __evaluate_cookies(self, cookie_set):
         self.browser.delete_cookies(cookie_set)
         self.browser.refresh()
