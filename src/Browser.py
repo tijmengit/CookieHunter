@@ -48,6 +48,7 @@ class Browser:
 
     def register(self):
         self.browser.get((self.register_url))
+        self.cookie_accept()
         # login_form = self.browser.find_element_by_xpath("//form[1]")
         checks = self.browser.find_elements(By.XPATH, "//input[@type='checkbox']")
         for check in checks:
@@ -71,9 +72,37 @@ class Browser:
 
         # button = self.browser.find_element(By.XPATH, "//button[@type='submit']")
         # button.click()
+        print("form filling complete")
         # name.submit()
         # button = browser.findElement(By.xpath("//button[text()='Sign up']")).click();
         # button.click()
+
+    def cookie_accept(self):
+        cookie_elements = ['cookieContainer', 'cookieOverlay', 'cookieAcceptForm']
+        # text which could be inside cookie accept buttons:
+        cookie_accept_elements = [ 'bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
+                                  'accepteer',  'Accept','accept', 'cookies', 'Cookies', 'keuze', 'choice']
+        cookie_present = False
+        for el in cookie_elements:
+            try:
+                self.browser.find_element_by_xpath(f"//*[contains(text(), {el})]")
+                cookie_present = True
+                break
+            except Exception as e:
+                print(e)
+        if cookie_present:
+            for el in cookie_accept_elements:
+                try:
+                    accept_button_options = self.browser.find_elements_by_xpath(f"//button[contains(text(), {el})]")
+                    for b in accept_button_options:
+                        try:
+                            b.click()
+                            return
+                        except Exception as e:
+                            pass
+                except Exception as e:
+                    pass
+        return
 
     def login(self):
         self.browser.get((self.login_url))
