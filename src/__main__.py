@@ -6,20 +6,20 @@ from src.CookieAuditor import *
 
 if __name__ == "__main__":
     home_url = ""
-    login_url = "https://www.goodreads.com/user/sign_in"
-    register_url = "https://www.goodreads.com/user/sign_up"
+    login_url = ""
+    register_url = "https://tweakers.net/my.tnet/register/"
     PATH = os.getenv(
-        "LOCALAPPDATA") + "/ChromeDriver/chromedriver" if platform.system() == "Windows" else "../chromedriver"
+        "LOCALAPPDATA") + "/ChromeDriver/chromedriver" if platform.system() == "Windows" else "/usr/local/sbin/chromedriver"
     browser = Browser(home_url=home_url, login_url=login_url, register_url=register_url, driver_path=PATH)
 
     try:
-        # browser.register()
-        browser.login()
-        c_auditor = CookieAuditor(browser)
+        browser.register()
+        # browser.login()
+        # c_auditor = CookieAuditor(browser)
         #vulnerable = c_auditor.findVulnerableCookies()
         #print(vulnerable)
-        auth_cookies = c_auditor.findAuthCookies()
-        print(auth_cookies)
+        # auth_cookies = c_auditor.findAuthCookies()
+        # print(auth_cookies)
         browser.close()
     except:
         traceback.print_exc()
