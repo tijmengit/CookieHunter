@@ -2,7 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-
+from time import sleep
 
 
 class Browser:
@@ -40,7 +40,8 @@ class Browser:
 
                               ]
         self.username_synonyms = ['username', 'uname', 'user_id', 'user_name', 'uName', 'u_Name', 'UserName',
-                                  'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]', 'Username', 'nc_username', 'nc_username_required'
+                                  'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]',
+                                  'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
     def filter_elements(self, element_list):
         iterator = filter(lambda element: element.is_displayed(), set(element_list))
@@ -48,7 +49,10 @@ class Browser:
 
     def register(self):
         self.browser.get((self.register_url))
-        self.cookie_accept()
+        creds_for_register = {}
+        if self.cookie_box_oracle():
+            self.cookie_accept()
+
         # login_form = self.browser.find_element_by_xpath("//form[1]")
         checks = self.browser.find_elements(By.XPATH, "//input[@type='checkbox']")
         for check in checks:
@@ -57,52 +61,94 @@ class Browser:
         email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
         for field in email:
             field.send_keys(self.email_address)
+            creds_for_register['email'] = self.email_address
 
         pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
         for field in pwd:
             field.send_keys(self.pwd)
+            creds_for_register['pwd'] = self.pwd
 
         username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
         for field in username:
             field.send_keys(self.username)
+            creds_for_register['username'] = self.username
 
         name = self.generic_element_finder("//input[@type='name']", self.name_synonyms)
         for field in name :
             field.send_keys(self.name)
+            creds_for_register['name'] = self.name
 
+        print("form filling complete")
+        sleep(10)
+
+        # Comment this out to submit registration:
+        # self.submit_registration(name, creds_for_register)
+
+    def submit_registration(self, el, creds_for_register):
+        el.submit()
         # button = self.browser.find_element(By.XPATH, "//button[@type='submit']")
         # button.click()
-        print("form filling complete")
         # name.submit()
         # button = browser.findElement(By.xpath("//button[text()='Sign up']")).click();
         # button.click()
 
-    def cookie_accept(self):
+        # TODO: add emailVerifier,
+
+        self.login()
+        if self.login_oracle():
+            self.fill_database(able_to_fill_register=True, able_to_fill_login=True, registered=True, captcha=False,
+                               creds_for_register=creds_for_register)
+
+    def fill_database(self, able_to_fill_register, able_to_fill_login, registered, captcha, creds_for_register):
+        data = {}
+        data['creds_for_register'] = creds_for_register
+        data['home_url'] = self.home_url
+        data['register_url'] = self.register_url
+        data['login_url'] = self.login_url
+        data['able_to_fill_register'] = able_to_fill_register
+        data['able_to_fill_login'] = able_to_fill_login
+        data['registered'] = registered
+        data['captcha'] = captcha
+    #     TODO: add database connection
+
+
+
+    def cookie_box_oracle(self):
+        '''
+        Function to check for a cookie box, which asks for consent
+        :return: Cookie box present
+        '''
         cookie_elements = ['cookieContainer', 'cookieOverlay', 'cookieAcceptForm']
-        # text which could be inside cookie accept buttons:
-        cookie_accept_elements = [ 'bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
-                                  'accepteer',  'Accept','accept', 'cookies', 'Cookies', 'keuze', 'choice']
-        cookie_present = False
+
+        # sleep(10)
+        # First check if there is indeed a cookie popup, otherwise you don't know what button you are clicking
         for el in cookie_elements:
             try:
                 self.browser.find_element_by_xpath(f"//*[contains(text(), {el})]")
-                cookie_present = True
-                break
+                return True
             except Exception as e:
                 print(e)
-        if cookie_present:
-            for el in cookie_accept_elements:
-                try:
-                    accept_button_options = self.browser.find_elements_by_xpath(f"//button[contains(text(), {el})]")
-                    for b in accept_button_options:
-                        try:
-                            b.click()
-                            return
-                        except Exception as e:
-                            pass
-                except Exception as e:
-                    pass
-        return
+        return False
+
+    def cookie_accept(self):
+
+        # text which could be inside cookie accept buttons:
+        cookie_accept_elements = [ 'bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
+                                  'accepteer',  'Accept','accept', 'cookies', 'Cookies', 'keuze', 'choice']
+
+        for el in cookie_accept_elements:
+            try:
+                accept_button_options = self.browser.find_elements_by_xpath(f"//button[contains(text(), {el})]")
+                for b in accept_button_options:
+                    try:
+                        b.click()
+                        self.browser.get((self.register_url))
+                        return
+                    except Exception as e:
+                        pass
+            except Exception as e:
+                pass
+
 
     def login(self):
         self.browser.get((self.login_url))
@@ -134,6 +180,7 @@ class Browser:
 
                 element = self.browser.find_elements(By.TAG_NAME, text)
                 element_list = element_list + element
+                # TODO: why not use self.browser.find_element_by_xpath("//*[contains(@id, text')]")
 
                 element = self.browser.find_elements(By.ID, text)
                 element_list = element_list + element
