@@ -47,8 +47,8 @@ class CookieAuditor:
 
     def findAuthCookies(self):
         # Retrieve Cookies
-        cookie_list = self.browser.get_cookies()
-
+        cookie_list_unfiltered = self.browser.get_cookies()
+        cookie_list = [c for c in cookie_list_unfiltered if not c['secure'] or not c['httpOnly']]
         # Initialization from bottom and top, starting with full set and with single cookies
         # There will be 2 skipping sets which will be compared with to check if a set still has to be evaluated or not
         # e.g. if Cookie A is sufficient enough to login, every other set including A can be skipped: A -> skip_enabling_set
