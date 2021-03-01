@@ -2,7 +2,7 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-
+from time import sleep
 
 
 class Browser:
@@ -40,7 +40,8 @@ class Browser:
 
                               ]
         self.username_synonyms = ['username', 'uname', 'user_id', 'user_name', 'uName', 'u_Name', 'UserName',
-                                  'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]', 'Username', 'nc_username', 'nc_username_required'
+                                  'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]',
+                                  'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
     def filter_elements(self, element_list):
         iterator = filter(lambda element: element.is_displayed(), set(element_list))
@@ -48,7 +49,10 @@ class Browser:
 
     def register(self):
         self.browser.get((self.register_url))
-        self.cookie_accept()
+
+        if self.cookie_box_oracle():
+            self.cookie_accept()
+
         # login_form = self.browser.find_element_by_xpath("//form[1]")
         checks = self.browser.find_elements(By.XPATH, "//input[@type='checkbox']")
         for check in checks:
@@ -73,36 +77,47 @@ class Browser:
         # button = self.browser.find_element(By.XPATH, "//button[@type='submit']")
         # button.click()
         print("form filling complete")
+        sleep(10)
         # name.submit()
         # button = browser.findElement(By.xpath("//button[text()='Sign up']")).click();
         # button.click()
 
-    def cookie_accept(self):
+    def cookie_box_oracle(self):
+        '''
+        Function to check for a cookie box, which asks for consent
+        :return: Cookie box present
+        '''
         cookie_elements = ['cookieContainer', 'cookieOverlay', 'cookieAcceptForm']
-        # text which could be inside cookie accept buttons:
-        cookie_accept_elements = [ 'bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
-                                  'accepteer',  'Accept','accept', 'cookies', 'Cookies', 'keuze', 'choice']
-        cookie_present = False
+
+        sleep(10)
+        # First check if there is indeed a cookie popup, otherwise you don't know what button you are clicking
         for el in cookie_elements:
             try:
                 self.browser.find_element_by_xpath(f"//*[contains(text(), {el})]")
-                cookie_present = True
-                break
+                return True
             except Exception as e:
                 print(e)
-        if cookie_present:
-            for el in cookie_accept_elements:
-                try:
-                    accept_button_options = self.browser.find_elements_by_xpath(f"//button[contains(text(), {el})]")
-                    for b in accept_button_options:
-                        try:
-                            b.click()
-                            return
-                        except Exception as e:
-                            pass
-                except Exception as e:
-                    pass
-        return
+        return False
+
+    def cookie_accept(self):
+
+        # text which could be inside cookie accept buttons:
+        cookie_accept_elements = [ 'bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
+                                  'accepteer',  'Accept','accept', 'cookies', 'Cookies', 'keuze', 'choice']
+
+        for el in cookie_accept_elements:
+            try:
+                accept_button_options = self.browser.find_elements_by_xpath(f"//button[contains(text(), {el})]")
+                for b in accept_button_options:
+                    try:
+                        b.click()
+                        self.browser.get((self.register_url))
+                        return
+                    except Exception as e:
+                        pass
+            except Exception as e:
+                pass
+
 
     def login(self):
         self.browser.get((self.login_url))
@@ -134,6 +149,7 @@ class Browser:
 
                 element = self.browser.find_elements(By.TAG_NAME, text)
                 element_list = element_list + element
+                # TODO: why not use self.browser.find_element_by_xpath("//*[contains(@id, text')]")
 
                 element = self.browser.find_elements(By.ID, text)
                 element_list = element_list + element
