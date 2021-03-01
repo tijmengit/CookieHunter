@@ -36,6 +36,16 @@
     "home_url": "tweakers.net",
     "login_url": "",
   "register_url": "https://tweakers.net/my.tnet/register/"
+  },
+  {
+    "home_url": "",
+    "login_url": "",
+  "register_url": "https://en.wikipedia.org/w/index.php?title=Special:CreateAccount&returnto=Main+Page"
+  },
+  {
+    "home_url": "",
+    "login_url": "",
+  "register_url": ""
   }
 ]
 

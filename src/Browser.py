@@ -49,7 +49,7 @@ class Browser:
 
     def register(self):
         self.browser.get((self.register_url))
-
+        creds_for_register = {}
         if self.cookie_box_oracle():
             self.cookie_accept()
 
@@ -61,26 +61,56 @@ class Browser:
         email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
         for field in email:
             field.send_keys(self.email_address)
+            creds_for_register['email'] = self.email_address
 
         pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
         for field in pwd:
             field.send_keys(self.pwd)
+            creds_for_register['pwd'] = self.pwd
 
         username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
         for field in username:
             field.send_keys(self.username)
+            creds_for_register['username'] = self.username
 
         name = self.generic_element_finder("//input[@type='name']", self.name_synonyms)
         for field in name :
             field.send_keys(self.name)
+            creds_for_register['name'] = self.name
 
-        # button = self.browser.find_element(By.XPATH, "//button[@type='submit']")
-        # button.click()
         print("form filling complete")
         sleep(10)
-        # name.submit()
+
+        # Comment this out to submit registration:
+        # self.submit_registration(name, creds_for_register)
+
+    def submit_registration(self, el, creds_for_register):
+        el.submit()
+        # button = self.browser.find_element(By.XPATH, "//button[@type='submit']")
+        # button.click()
         # button = browser.findElement(By.xpath("//button[text()='Sign up']")).click();
         # button.click()
+
+        # TODO: add emailVerifier,
+
+        self.login()
+        if self.login_oracle():
+            self.fill_database(able_to_fill_register=True, able_to_fill_login=True, registered=True, captcha=False,
+                               creds_for_register=creds_for_register)
+
+    def fill_database(self, able_to_fill_register, able_to_fill_login, registered, captcha, creds_for_register):
+        data = {}
+        data['creds_for_register'] = creds_for_register
+        data['home_url'] = self.home_url
+        data['register_url'] = self.register_url
+        data['login_url'] = self.login_url
+        data['able_to_fill_register'] = able_to_fill_register
+        data['able_to_fill_login'] = able_to_fill_login
+        data['registered'] = registered
+        data['captcha'] = captcha
+    #     TODO: add database connection
+
+
 
     def cookie_box_oracle(self):
         '''
@@ -89,7 +119,7 @@ class Browser:
         '''
         cookie_elements = ['cookieContainer', 'cookieOverlay', 'cookieAcceptForm']
 
-        sleep(10)
+        # sleep(10)
         # First check if there is indeed a cookie popup, otherwise you don't know what button you are clicking
         for el in cookie_elements:
             try:

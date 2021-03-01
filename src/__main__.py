@@ -7,7 +7,7 @@ from src.CookieAuditor import *
 if __name__ == "__main__":
     home_url = ""
     login_url = ""
-    register_url = "https://tweakers.net/my.tnet/register/"
+    register_url = "https://hypothes.is/signup"
     PATH = os.getenv(
         "LOCALAPPDATA") + "/ChromeDriver/chromedriver" if platform.system() == "Windows" else "/usr/local/sbin/chromedriver"
     browser = Browser(home_url=home_url, login_url=login_url, register_url=register_url, driver_path=PATH)
