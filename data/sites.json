@@ -25,7 +25,17 @@
   {
     "home_url": "",
     "login_url": "https://www.goodreads.com/user/sign_in",
-    "register_url": "https://www.goodreads.com/user/sign_up"
+  "register_url": "https://www.goodreads.com/user/sign_up"
+  },
+    {
+    "home_url": "",
+    "login_url": "",
+  "register_url": "https://www.overleaf.com/register"
+  },
+      {
+    "home_url": "tweakers.net",
+    "login_url": "",
+  "register_url": "https://tweakers.net/my.tnet/register/"
   }
 ]
 
