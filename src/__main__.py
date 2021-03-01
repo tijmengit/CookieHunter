@@ -1,8 +1,8 @@
 
 import sys
 import traceback
-from Browser import *
-from CookieAuditor import *
+from src.Browser import *
+from src.CookieAuditor import *
 
 if __name__ == "__main__":
     home_url = ""

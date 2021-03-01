@@ -1,5 +1,8 @@
 from selenium import webdriver
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.wait import WebDriverWait
+from selenium.webdriver.support import expected_conditions as ec
+
 
 
 class Browser:
@@ -13,24 +16,35 @@ class Browser:
         # Credentials
         self.email_address = "cookiehunterproject@gmail.com"
         self.pwd = "passwordRandom123!"
-        self.name = "Jan Janssen"
+        self.name = "Janssen "
         self.username = "CookieHunter007"
         self.email_synonyms = ['user_email', 'email', 'e_mail', 'useremail', 'userEmail', 'mail', 'uemail',
                                'User_email', 'Email', 'E_mail', 'Useremail', 'UserEmail', 'Mail', 'Uemail',
                                'User_email_address', 'Email_address', 'email_address', 'emailadress',
-                               'UserEmailAddress',
+                               'UserEmailAddress', 'Email address', 'Email Address', 'EMAIL',
                                'MailAdress'
                                ]
         self.password_synonyms = ['user_password', 'password', 'pword', 'userpassword', 'userpwd', 'pwd', 'PWD',
-                                  'u_password', 'passw', 'p_word', 'UserPassword', 'UserPwd', 'Pwd', 'pass',
+                                  'u_password', 'passw', 'p_word', 'UserPassword', 'UserPwd', 'Pwd', 'pass', 'Password',
+                                  'User Password'
                                   ]
         self.name_synonyms = ['name_first', 'name', 'first_name', 'firstname', 'First_Name', 'f_name', 'firstName',
                               'User_efirstname', 'First_name', 'first_Name', 'NAME', 'F_NAME', 'FName',
-                              'fname_', '_firstname', 'fullname', 'full_name', 'user_first_name'
+                              'fname_', '_firstname', 'fullname', 'full_name', 'user_first_name', 'First Name', 'first name',
+                              'nc_firstname', 'nc_firstname_required',
+
+                              'last_name', 'lastname', 'last_Name', 'l_name', 'lastName',
+                              'User_elastname', 'last_name', 'Last_Name', 'l_NAME', 'lName',
+                              'lname_', '_lastname', 'user_last_name', 'Last Name', 'Last name', 'last name',
+                              'nc_lastname', 'nc_lastname_required'
+
                               ]
         self.username_synonyms = ['username', 'uname', 'user_id', 'user_name', 'uName', 'u_Name', 'UserName',
-                                  'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]'
+                                  'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]', 'Username', 'nc_username', 'nc_username_required'
                                   ]
+    def filter_elements(self, element_list):
+        iterator = filter(lambda element: element.is_displayed(), set(element_list))
+        return list(iterator)
 
     def register(self):
         self.browser.get((self.register_url))
@@ -40,24 +54,23 @@ class Browser:
             check.click()
 
         email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
-        if email is not None:
-            email.send_keys(self.email_address)
+        for field in email:
+            field.send_keys(self.email_address)
 
         pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
-        if pwd is not None:
-            pwd.send_keys(self.pwd)
-
-        name = self.generic_element_finder("//input[@type='name']", self.name_synonyms)
-        if name is not None:
-            name.send_keys(self.name)
+        for field in pwd:
+            field.send_keys(self.pwd)
 
         username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
-        if username is not None:
-            username.send_keys(self.username)
+        for field in username:
+            field.send_keys(self.username)
+
+        name = self.generic_element_finder("//input[@type='name']", self.name_synonyms)
+        for field in name :
+            field.send_keys(self.name)
 
         # button = self.browser.find_element(By.XPATH, "//button[@type='submit']")
         # button.click()
-        print("form filling complete")
         # name.submit()
         # button = browser.findElement(By.xpath("//button[text()='Sign up']")).click();
         # button.click()
@@ -65,11 +78,12 @@ class Browser:
     def login(self):
         self.browser.get((self.login_url))
         email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
-        if email is not None:
-            email.send_keys(self.email_address)
+        for field in email:
+            field.send_keys(self.email_address)
+
         pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
-        if pwd is not None:
-            pwd.send_keys(self.pwd)
+        for field in pwd:
+            field.send_keys(self.pwd)
 
         pwd.submit()
 
@@ -81,28 +95,30 @@ class Browser:
         self.browser.refresh()
 
     def generic_element_finder(self, x_path_text, text_list):
-        element = None
-        try:
-            element = self.browser.find_element(By.XPATH, x_path_text)
-        except Exception as e:
-            pass
-        for text in text_list:
-            try:
-                element = self.browser.find_element(By.NAME, text)
-            except Exception as e:
-                pass
-                # print(e)
-            try:
-                element = self.browser.find_element(By.TAG_NAME, text)
-            except Exception as e:
-                pass
-                # print(e)
-            try:
-                element = self.browser.find_element(By.ID, text)
-            except Exception as e:
-                pass
+        element_list = []
+        element = self.browser.find_elements(By.XPATH, x_path_text)
+        element_list = element_list + element
 
-        return element
+        for text in text_list:
+                element = self.browser.find_elements(By.NAME, text)
+                element_list = element_list + element
+
+                element = self.browser.find_elements(By.TAG_NAME, text)
+                element_list = element_list + element
+
+                element = self.browser.find_elements(By.ID, text)
+                element_list = element_list + element
+
+                placeholder = "//input[@placeholder=\"{plc}\"]".format(plc = text)
+                element = self.browser.find_elements(By.XPATH, placeholder)
+                element_list = element_list + element
+
+                placeholder = "//input[@placeholder=\'{plc}\']".format(plc = text)
+                element = self.browser.find_elements(By.XPATH, placeholder)
+                element_list = element_list + element
+
+        return self.filter_elements(element_list)
+
 
     def get_cookies(self):
         return self.browser.get_cookies()

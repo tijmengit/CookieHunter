@@ -1,4 +1,9 @@
-[{
+[ {
+    "home_url": "",
+    "login_url": "https://www.namecheap.com/myaccount/login/",
+    "register_url": "https://www.namecheap.com/myaccount/signup/"
+  },
+  {
   "home_url": "",
   "login_url": "https://create.piktochart.com/",
   "register_url": "https://create.piktochart.com/users/sign_up",
