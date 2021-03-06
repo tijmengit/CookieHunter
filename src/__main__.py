@@ -5,7 +5,7 @@ from src.Browser import *
 from src.CookieAuditor import *
 
 if __name__ == "__main__":
-    home_url = ""
+    home_url = "https://www.goodreads.com"
     login_url = "https://www.goodreads.com/user/sign_in"
     register_url = "https://www.goodreads.com/user/sign_up"
     PATH = os.getenv(
