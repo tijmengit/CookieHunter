@@ -38,19 +38,18 @@ class PrivacyAuditor:
     def audit(self, base_url: str, cookies: List[Dict[str, str]], information: Dict[str, str]):
         page_leaks = self.find_page_leaks(base_url, cookies, information)
 
-
-
     def find_page_leaks(self, base_url: str, cookies: List[Dict[str, str]], information: Dict[str, str]):
         pages = self.get_interesting_pages(base_url, cookies)
         browser = self.create_browser(base_url, cookies)
         for page in pages:
             browser.get(page)
             for type, info in information.items():
-                if info in browser.page_source:
-                    print(f'{type} leak found on page {page}, "{info}"')
-
-
-
+                elements = browser.find_elements_by_xpath(f'//*[text()="{info}"]')
+                if elements:
+                    for element in elements:
+                        print(page)
+                        print(element.text)
+                        print('=================')
 
     def get_interesting_pages(self, base_url: str, cookies: List[Dict[str, str]]):
         depth = 1
@@ -111,7 +110,7 @@ if __name__ == '__main__':
         'LOCALAPPDATA') + '/ChromeDriver/chromedriver' if platform.system() == 'Windows' else '/usr/local/sbin/chromedriver'
     url = 'https://www.goodreads.com/'
     stolen_cookies = [
-        {'name': '_session_id2', 'value': 'bfac388d4850d644c25f9b62a778f1e5', 'domain': 'www.goodreads.com'},
+        {'name': '_session_id2', 'value': '7d73483c9393ddb796006f6c6669e3bf', 'domain': 'www.goodreads.com'},
         {'name': 'locale', 'value': 'en', 'domain': 'www.goodreads.com'},
         {'name': 'logged_out_browsing_page_count', 'value': '2', 'domain': 'www.goodreads.com'},
         {'name': 'cssid', 'value': '848-2350035-9701439', 'domain': 'www.goodreads.com'},
@@ -121,7 +120,10 @@ if __name__ == '__main__':
         'firstname': 'Jan',
         'lastname': 'Janssen',
         'city': 'Vijfhuizen',
-        'country': 'Netherlands'
+        'country': 'Netherlands',
+        'password': 'passwordRandom123!',
+        'email': 'cookiehunterproject@gmail.com',
+        'username': 'CookieHunter007',
     }
 
     options = ['--headless']
@@ -129,6 +131,6 @@ if __name__ == '__main__':
 
     auth = True
     auth = False
-
+    # TODO move auth to .audit()
     auditor = PrivacyAuditor(PATH, auth, options)
     auditor.audit(url, stolen_cookies, reference_information)
