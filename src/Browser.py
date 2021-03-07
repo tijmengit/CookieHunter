@@ -3,20 +3,25 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from time import sleep
+from DatabaseManager import DatabaseManager
+import tldextract
 
 
 class Browser:
 
     def __init__(self, home_url, login_url, register_url, driver_path):
         self.browser = webdriver.Chrome(driver_path)
+        self.db = DatabaseManager()
         self.home_url = home_url
         self.login_url = login_url
         self.register_url = register_url
-
+        ext = tldextract.extract(home_url)
+        self.identifier = ext.domain
+        self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
         self.email_address = "cookiehunterproject@gmail.com"
         self.pwd = "passwordRandom123!"
-        self.name = "Janssen "
+        self.name = "Janssen"
         self.username = "CookieHunter007"
         self.email_synonyms = ['user_email', 'email', 'e_mail', 'useremail', 'userEmail', 'mail', 'uemail',
                                'User_email', 'Email', 'E_mail', 'Useremail', 'UserEmail', 'Mail', 'Uemail',
@@ -43,6 +48,7 @@ class Browser:
                                   'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]',
                                   'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
+
     def filter_elements(self, element_list):
         iterator = filter(lambda element: element.is_displayed(), set(element_list))
         return list(iterator)
@@ -101,15 +107,14 @@ class Browser:
 
     def fill_database(self, able_to_fill_register, able_to_fill_login, registered, captcha, creds_for_register):
         data = {}
-        data['creds_for_register'] = creds_for_register
-        data['home_url'] = self.home_url
-        data['register_url'] = self.register_url
-        data['login_url'] = self.login_url
+        data['register_data'] = creds_for_register
         data['able_to_fill_register'] = able_to_fill_register
         data['able_to_fill_login'] = able_to_fill_login
         data['registered'] = registered
         data['captcha'] = captcha
-    #     TODO: add database connection
+        self.db.update_web_page(self.identifier, data)
+
+
 
 
 
