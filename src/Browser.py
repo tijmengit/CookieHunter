@@ -31,12 +31,13 @@ class Browser:
                                ]
         self.password_synonyms = ['user_password', 'password', 'pword', 'userpassword', 'userpwd', 'pwd', 'PWD',
                                   'u_password', 'passw', 'p_word', 'UserPassword', 'UserPwd', 'Pwd', 'pass', 'Password',
-                                  'User Password'
+                                  'User Password', 'Passwd', 'ConfirmPasswd', 'Confirm Password', 'Confirm password',
+                                  'onfirm Password', 'confirm password' , 'CnfrmPsswrd', 'ConfirmPwd', 'CnfrmPwd'
                                   ]
         self.name_synonyms = ['name_first', 'name', 'first_name', 'firstname', 'First_Name', 'f_name', 'firstName',
                               'User_efirstname', 'First_name', 'first_Name', 'NAME', 'F_NAME', 'FName',
                               'fname_', '_firstname', 'fullname', 'full_name', 'user_first_name', 'First Name', 'first name',
-                              'nc_firstname', 'nc_firstname_required',
+                              'nc_firstname', 'nc_firstname_required', 'First name',
 
                               'last_name', 'lastname', 'last_Name', 'l_name', 'lastName',
                               'User_elastname', 'last_name', 'Last_Name', 'l_NAME', 'lName',
@@ -66,23 +67,35 @@ class Browser:
 
         email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
         for field in email:
-            field.send_keys(self.email_address)
-            creds_for_register['email'] = self.email_address
-
-        pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
-        for field in pwd:
-            field.send_keys(self.pwd)
-            creds_for_register['pwd'] = self.pwd
+            if field.get_attribute("value") == "":
+                field.send_keys(self.email_address)
+                creds_for_register['email'] = self.email_address
+            else:
+                print("Field already filled by others")
 
         username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
         for field in username:
-            field.send_keys(self.username)
-            creds_for_register['username'] = self.username
+            if field.get_attribute("value") == "":
+                field.send_keys(self.username)
+                creds_for_register['username'] = self.username
+            else:
+                print("Field already filled by others")
+
+        pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
+        for field in pwd:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.pwd)
+                creds_for_register['pwd'] = self.pwd
+            else:
+                print("Field already filled by others")
 
         name = self.generic_element_finder("//input[@type='name']", self.name_synonyms)
-        for field in name :
-            field.send_keys(self.name)
-            creds_for_register['name'] = self.name
+        for field in name:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.name)
+                creds_for_register['name'] = self.name
+            else:
+                print("Field already filled by others")
 
         print("form filling complete")
         sleep(10)
@@ -113,9 +126,6 @@ class Browser:
         data['registered'] = registered
         data['captcha'] = captcha
         self.db.update_web_page(self.identifier, data)
-
-
-
 
 
     def cookie_box_oracle(self):
@@ -157,13 +167,27 @@ class Browser:
 
     def login(self):
         self.browser.get((self.login_url))
+
         email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
         for field in email:
-            field.send_keys(self.email_address)
+            if field.get_attribute("value") == "":
+                field.send_keys(self.email_address)
+            else:
+                print("Field already filled by others")
+
+        username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
+        for field in username:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.username)
+            else:
+                print("Field already filled by others")
 
         pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
         for field in pwd:
-            field.send_keys(self.pwd)
+            if field.get_attribute("value") == "":
+                field.send_keys(self.pwd)
+            else:
+                print("Field already filled by others")
 
         pwd.submit()
 
@@ -185,7 +209,6 @@ class Browser:
 
                 element = self.browser.find_elements(By.TAG_NAME, text)
                 element_list = element_list + element
-                # TODO: why not use self.browser.find_element_by_xpath("//*[contains(@id, text')]")
 
                 element = self.browser.find_elements(By.ID, text)
                 element_list = element_list + element
