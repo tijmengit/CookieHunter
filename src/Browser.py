@@ -2,6 +2,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.chrome.options import Options
+
 from time import sleep
 from DatabaseManager import DatabaseManager
 import tldextract
@@ -10,7 +12,14 @@ from bs4 import BeautifulSoup as BS
 class Browser:
 
     def __init__(self, home_url, login_url, register_url, driver_path):
-        self.browser = webdriver.Chrome(driver_path)
+        self.browser_options = Options()
+        self.prefs = {
+            "profile.default_content_setting_values.notifications": 2,
+            "profile.managed_default_content_settings.popups": 2,
+        }
+        self.browser_options.add_experimental_option("prefs", self.prefs)
+        self.browser = webdriver.Chrome(driver_path, options=self.browser_options)
+        self.browser.set_page_load_timeout(10)
         self.db = DatabaseManager()
         self.home_url = home_url
         self.login_url = login_url
@@ -55,6 +64,29 @@ class Browser:
 
         self.sign_up_synonyms = ['register', 'Register','REGISTER', 'sign up', 'Sign up', 'Sign Up', 'SIGN UP']
 
+        self.login_synonyms = ['login','LOGIN','Login', 'log-in', 'log in', 'Log in']
+
+    # def create_synonyms(self, word_list):
+    #     new_list =[]
+    #     for word in word_list:
+    #         # only first letter:
+    #         new_list.append(word.upper())
+    #         if ' ' in word:
+    #             words = word.split(' ')
+    #             for w in words:
+    #                 tmp_list = self.rewrite(w)
+    #                 new_list.extend(tmp_list)
+    #             new_list.append('-'.join(words))
+    #             new_list.append(''.join(words))
+    #         else:
+    #             new_list.extend(self.rewrite(word))
+    #     return new_list
+    #
+    # def rewrite(self, word):
+    #     tmp_list = []
+    #     tmp_list.append(word.capitalize())
+    #     tmp_list.append(word.upper())
+    #     return tmp_list
 
     def filter_elements(self, element_list):
         iterator = filter(lambda element: element.is_displayed(), set(element_list))
@@ -154,7 +186,7 @@ class Browser:
 
 
     def navigate_to_register(self):
-        self.register_url = self.get_sitemap(self.sign_up_synonyms)
+        self.register_url = self.get_sitemap(self.sign_up_synonyms)[0]
         self.browser.get(self.register_url)
 
     def identify_form(self):
@@ -173,13 +205,16 @@ class Browser:
         limit = 50
 
         queue = [(self.home_url, 0)]
-        found = [self.home_url]
+        found = []
 
         base = urlparse.urlparse(self.home_url).netloc
+        handled = []
+
 
         while queue:
             page = queue.pop(0)
             self.browser.get(page[0])
+            handled.append(page)
             soup = BS(self.browser.page_source, 'html.parser')
 
             for link in soup.select('body a')[:limit]:
@@ -190,14 +225,16 @@ class Browser:
                 # create clean link without queries, parameters or fragments
                 clean_link = f'{parsed_link.scheme}://{parsed_link.netloc}{parsed_link.path}'
 
-                if parsed_link.netloc == base \
-                        and elem in keywords \
+                if elem in keywords \
                         and clean_link not in found:
                     found.append(clean_link)
 
-                    if page[1] < depth:
-                        queue.append((clean_link, page[1] + 1))
-                        queue = sorted(queue, key=lambda x: x[1])
+                if page[1] < depth\
+                        and clean_link not in handled \
+                        and clean_link not in found\
+                        and elem in self.login_synonyms:
+                    queue.append((clean_link, page[1] + 1))
+                    queue = sorted(queue, key=lambda x: x[1])
 
         return found
 
