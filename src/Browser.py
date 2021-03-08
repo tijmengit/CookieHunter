@@ -5,8 +5,8 @@ from selenium.webdriver.support import expected_conditions as ec
 from time import sleep
 from DatabaseManager import DatabaseManager
 import tldextract
-
-
+import urllib.parse as urlparse
+from bs4 import BeautifulSoup as BS
 class Browser:
 
     def __init__(self, home_url, login_url, register_url, driver_path):
@@ -49,15 +49,24 @@ class Browser:
                                   'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
 
+        # text which could be inside cookie accept buttons:
+        self.cookie_accept_synonyms = [ 'Accept','accept','ACCEPT','bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
+                                  'accepteer','ACCEPTEER',  'keuze', 'choice', 'Continue', 'continue', 'accept all cookies', 'Accept all cookies']
+
+        self.sign_up_synonyms = ['register', 'Register','REGISTER', 'sign up', 'Sign up', 'Sign Up', 'SIGN UP']
+
+
     def filter_elements(self, element_list):
         iterator = filter(lambda element: element.is_displayed(), set(element_list))
         return list(iterator)
 
     def register(self):
-        self.browser.get((self.register_url))
+        self.browser.get((self.home_url))
         creds_for_register = {}
         if self.cookie_box_oracle():
             self.cookie_accept()
+
+        self.navigate_to_register()
 
         # login_form = self.browser.find_element_by_xpath("//form[1]")
         checks = self.browser.find_elements(By.XPATH, "//input[@type='checkbox']")
@@ -116,8 +125,6 @@ class Browser:
 
 
 
-
-
     def cookie_box_oracle(self):
         '''
         Function to check for a cookie box, which asks for consent
@@ -136,24 +143,63 @@ class Browser:
         return False
 
     def cookie_accept(self):
-
-        # text which could be inside cookie accept buttons:
-        cookie_accept_elements = [ 'bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
-                                  'accepteer',  'Accept','accept', 'cookies', 'Cookies', 'keuze', 'choice']
-
-        for el in cookie_accept_elements:
+        accept_button_options = self.generic_buttons(self.cookie_accept_synonyms)
+        for b in accept_button_options:
             try:
-                accept_button_options = self.browser.find_elements_by_xpath(f"//button[contains(text(), {el})]")
-                for b in accept_button_options:
-                    try:
-                        b.click()
-                        self.browser.get((self.register_url))
-                        return
-                    except Exception as e:
-                        pass
+                b.click()
+                self.browser.get((self.home_url))
+                return
             except Exception as e:
                 pass
 
+
+    def navigate_to_register(self):
+        self.register_url = self.get_sitemap(self.sign_up_synonyms)
+        self.browser.get(self.register_url)
+
+    def identify_form(self):
+        pwd_fields = self.generic_input_element_finder(self.password_synonyms)
+        if len(pwd_fields) > 1:
+            return 'register'
+        name = self.generic_element_finder("//input[@type='name']", self.name_synonyms)
+        if len(name) >0:
+            return 'register'
+        if len(pwd_fields) == 1:
+            return 'login'
+        return 'contact'
+
+    def get_sitemap(self, keywords):
+        depth = 2
+        limit = 50
+
+        queue = [(self.home_url, 0)]
+        found = [self.home_url]
+
+        base = urlparse.urlparse(self.home_url).netloc
+
+        while queue:
+            page = queue.pop(0)
+            self.browser.get(page[0])
+            soup = BS(self.browser.page_source, 'html.parser')
+
+            for link in soup.select('body a')[:limit]:
+                full_link = urlparse.urljoin(self.home_url, link.get('href'))
+                parsed_link = urlparse.urlparse(full_link)
+                path = parsed_link.path.split('/')
+                elem = path[1] if len(path) >= 2 else ''
+                # create clean link without queries, parameters or fragments
+                clean_link = f'{parsed_link.scheme}://{parsed_link.netloc}{parsed_link.path}'
+
+                if parsed_link.netloc == base \
+                        and elem in keywords \
+                        and clean_link not in found:
+                    found.append(clean_link)
+
+                    if page[1] < depth:
+                        queue.append((clean_link, page[1] + 1))
+                        queue = sorted(queue, key=lambda x: x[1])
+
+        return found
 
     def login(self):
         self.browser.get((self.login_url))
@@ -200,6 +246,34 @@ class Browser:
 
         return self.filter_elements(element_list)
 
+    def generic_input_element_finder(self, text_list):
+        '''
+        This function returns generic input elements.
+        !! This will not work for input values for "name" since it will also match username input type
+        :param text_list:
+        :return: input element
+        '''
+        element_set = set()
+        attr = ['@id', '@name', '@placeholder']
+        for syn in text_list:
+            for a in attr:
+                if ' ' in syn:
+                    continue
+                elements = self.browser.find_elements_by_xpath(f'//input[contains({a}, {syn})]')
+                for element in elements:
+                    element_set.add(element)
+        return self.filter_elements(list(element_set))
+
+    def generic_buttons(self, text_list):
+        button_set = set()
+        for syn in text_list:
+            # x_paths = [f'//button[text()={syn}]', f'//a[contains(text(), {syn})]',  f'//div[contains(text(), {syn})]']
+            x_paths = ['//button[text()="'+syn+'"]']
+            for path in x_paths:
+                buttons = self.browser.find_elements_by_xpath(path)
+                for b in buttons:
+                    button_set.add(b)
+        return self.filter_elements(list(button_set))
 
     def get_cookies(self):
         return self.browser.get_cookies()
