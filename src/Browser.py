@@ -60,9 +60,9 @@ class Browser:
 
         # text which could be inside cookie accept buttons:
         self.cookie_accept_synonyms = [ 'Accept','accept','ACCEPT','bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
-                                  'accepteer','ACCEPTEER',  'keuze', 'choice', 'Continue', 'continue', 'accept all cookies', 'Accept all cookies']
+                                  'accepteer','ACCEPTEER',  'keuze', 'choice', 'Continue', 'continue', 'accept all cookies', 'Accept all cookies','Accept All Cookies', 'I Accept', "I Consent"]
 
-        self.sign_up_synonyms = ['register', 'Register','REGISTER', 'sign up', 'Sign up', 'Sign Up', 'SIGN UP']
+        self.sign_up_synonyms = ['register', 'Register','REGISTER','registration', 'REGISTRATION','Registration', 'sign up', 'Sign up', 'Sign Up', 'SIGN UP']
 
         self.login_synonyms = ['login','LOGIN','Login', 'log-in', 'log in', 'Log in']
 
@@ -93,12 +93,15 @@ class Browser:
         return list(iterator)
 
     def register(self):
-        self.browser.get((self.home_url))
+        if not self.register_url:
+            self.browser.get(self.home_url)
+        else:
+            self.browser.get(self.register_url)
         creds_for_register = {}
         if self.cookie_box_oracle():
             self.cookie_accept()
-
-        self.navigate_to_register()
+        if not self.register_url:
+            self.navigate_to_register()
 
         # login_form = self.browser.find_element_by_xpath("//form[1]")
         checks = self.browser.find_elements(By.XPATH, "//input[@type='checkbox']")
@@ -186,8 +189,10 @@ class Browser:
 
 
     def navigate_to_register(self):
-        self.register_url = self.get_sitemap(self.sign_up_synonyms)[0]
-        self.browser.get(self.register_url)
+        url = self.get_sitemap(self.sign_up_synonyms)
+        if len(url)>0:
+            self.register_url = url[0]
+            self.browser.get((self.register_url))
 
     def identify_form(self):
         pwd_fields = self.generic_input_element_finder(self.password_synonyms)
