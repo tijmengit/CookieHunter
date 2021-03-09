@@ -44,54 +44,72 @@ class PrivacyAuditor:
         self.cookies = cookies
         self.information = information
 
+        print('======= Interesting Pages ======')
         pages = self.get_interesting_pages()
+        print(pages, '\n')
+
+        browser = self.create_browser(True)
+
         print('========== Page Leaks ==========')
-        page_leaks = self.find_page_leaks(pages)
+        page_leaks = self.find_page_leaks(browser, pages)
         print(page_leaks, '\n')
 
         print('========= Cookie Leaks =========')
-        cookie_leaks = self.inspect_cookies()
+        cookie_leaks = self.inspect_cookies(browser)
         print(cookie_leaks, '\n')
 
         print('========== URL Leaks ===========')
-        url_leaks = self.inspect_URLs(pages)
+        url_leaks = self.inspect_urls(browser, pages)
         print(url_leaks, '\n')
 
         print('========= Storage Leaks ========')
-        storage_leaks = self.inspect_storage()
+        storage_leaks = self.inspect_storage(browser)
         print(storage_leaks, '\n')
 
-    def inspect_URLs(self, pages: List[str]) -> Set[str]:
+        browser.quit()
+
+    def inspect_urls(self, browser: WebDriver, urls: List[str]) -> Set[str]:
         leaks = set()
-        for page in pages:
-            for type, info in self.information.items():
-                if info in page:
-                    leaks.add(type)
+        for url in urls:
+            for info_type, info in self.information.items():
+                if urlparse.quote(info) in url:
+                    leaks.add(info_type)
         return leaks
 
-    def inspect_storage(self) -> Set[str]:
-        return None
+    def inspect_storage(self, browser: WebDriver) -> Set[str]:
+        leaks = set()
 
-    def inspect_cookies(self) -> Set[str]:
-        browser = self.create_browser(True)
+        local = browser.execute_script('return {...window.localStorage}')
+        session = browser.execute_script('return {...window.sessionStorage}')
+
+        for info_type, info in self.information.items():
+            for name, value in local.items():
+                if info == name or info == value:
+                    leaks.add(info_type)
+
+            for name, value in session.items():
+                if info == name or info == value:
+                    leaks.add(info_type)
+
+        return leaks
+
+    def inspect_cookies(self, browser: WebDriver) -> Set[str]:
         leaks = set()
         cookies = browser.get_cookies()
-        browser.quit()
         for cookie in cookies:
-            for type, info in self.information.items():
+            for info_type, info in self.information.items():
                 if info == cookie['name'] or info == cookie['value']:
-                    leaks.add(type)
+                    leaks.add(info_type)
         return leaks
 
-    def find_page_leaks(self, pages: List[str]) -> Set[str]:
-        browser = self.create_browser(True)
+    def find_page_leaks(self, browser: WebDriver, pages: List[str]) -> Set[str]:
         leaks = set()
         for page in pages:
             browser.get(page)
-            for type, info in self.information.items():
+            for info_type, info in self.information.items():
                 elements = browser.find_elements_by_xpath(f'//*[text()="{info}" or @value="{info}"]')
                 if elements:
-                    leaks.add(type)
+                    leaks.add(info_type)
         return leaks
 
     def get_interesting_pages(self) -> Set[str]:
