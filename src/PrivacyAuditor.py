@@ -45,9 +45,43 @@ class PrivacyAuditor:
         self.information = information
 
         pages = self.get_interesting_pages()
-        pprint(pages)
+        print('========== Page Leaks ==========')
         page_leaks = self.find_page_leaks(pages)
-        print(page_leaks)
+        print(page_leaks, '\n')
+
+        print('========= Cookie Leaks =========')
+        cookie_leaks = self.inspect_cookies()
+        print(cookie_leaks, '\n')
+
+        print('========== URL Leaks ===========')
+        url_leaks = self.inspect_URLs(pages)
+        print(url_leaks, '\n')
+
+        print('========= Storage Leaks ========')
+        storage_leaks = self.inspect_storage()
+        print(storage_leaks, '\n')
+
+    def inspect_URLs(self, pages: List[str]) -> Set[str]:
+        leaks = set()
+        for page in pages:
+            for type, info in self.information.items():
+                if info in page:
+                    leaks.add(type)
+        return leaks
+
+    def inspect_storage(self) -> Set[str]:
+        return None
+
+    def inspect_cookies(self) -> Set[str]:
+        browser = self.create_browser(True)
+        leaks = set()
+        cookies = browser.get_cookies()
+        browser.quit()
+        for cookie in cookies:
+            for type, info in self.information.items():
+                if info == cookie['name'] or info == cookie['value']:
+                    leaks.add(type)
+        return leaks
 
     def find_page_leaks(self, pages: List[str]) -> Set[str]:
         browser = self.create_browser(True)
@@ -125,10 +159,15 @@ if __name__ == '__main__':
         'LOCALAPPDATA') + '/ChromeDriver/chromedriver' if platform.system() == 'Windows' else '/usr/local/sbin/chromedriver'
     url = 'https://www.goodreads.com/'
     stolen_cookies = [
-        {'name': '_session_id2', 'value': '5390adc1e365869463f3f2396a906807', 'domain': 'www.goodreads.com'},
+        {'name': '_session_id2', 'value': '8b2658f5d3a4bbff643eed8d2921c654', 'domain': 'www.goodreads.com'},
         {'name': 'locale', 'value': 'en', 'domain': 'www.goodreads.com'},
         {'name': 'logged_out_browsing_page_count', 'value': '2', 'domain': 'www.goodreads.com'},
         {'name': 'cssid', 'value': '848-2350035-9701439', 'domain': 'www.goodreads.com'},
+        {'name': 'test1', 'value': 'cookiehunterproject', 'domain': 'www.goodreads.com'},
+        {'name': 'test2', 'value': 'CookieHunter007', 'domain': 'www.goodreads.com'},
+        {'name': 'test3', 'value': 'cookiehunterproject@gmail.com', 'domain': 'www.goodreads.com'},
+        {'name': 'test4', 'value': 'Jan Janssen', 'domain': 'www.goodreads.com'},
+
     ]
 
     reference_information = {
