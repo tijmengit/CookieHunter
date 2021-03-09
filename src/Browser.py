@@ -1,9 +1,12 @@
+from typing import Optional, Tuple
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from time import sleep
 from DatabaseManager import DatabaseManager
+from EmailVerifier import EmailVerifier
 import tldextract
 
 
@@ -12,6 +15,7 @@ class Browser:
     def __init__(self, home_url, login_url, register_url, driver_path):
         self.browser = webdriver.Chrome(driver_path)
         self.db = DatabaseManager()
+        self.emailVerifier = EmailVerifier()
         self.home_url = home_url
         self.login_url = login_url
         self.register_url = register_url
@@ -19,7 +23,9 @@ class Browser:
         self.identifier = ext.domain
         self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
-        self.email_address = "cookiehunterproject@gmail.com"
+        self.email_address = f'cookiehunterproject+{self.identifier}@gmail.com'
+        print(self.email_address)
+
         self.pwd = "passwordRandom123!"
         self.name = "Janssen"
         self.username = "CookieHunter007"
@@ -111,12 +117,30 @@ class Browser:
         # button = browser.findElement(By.xpath("//button[text()='Sign up']")).click();
         # button.click()
 
-        # TODO: add emailVerifier,
+        msgId, link = self.verifyEmail()
+        if msgId:
+            self.browser.get(link)
+            sleep(3)
+            self.browser.close()
+            self.db.update_web_page(self.identifier, {'verified': True})
+            self.emailVerifier.messageRead(msgId)
 
         self.login()
         if self.login_oracle():
             self.fill_database(able_to_fill_register=True, able_to_fill_login=True, registered=True, captcha=False,
                                creds_for_register=creds_for_register)
+
+    def verifyEmail(self, max_tries=6) -> Tuple[Optional[str], Optional[str]]:
+        tries = 1
+        while tries <= max_tries:
+            delay = 2**tries
+            sleep(delay)
+            msgId, link = self.emailVerifier.getUnreadEmailLinks(self.identifier, days=30)
+            if link:
+                return msgId, link
+
+            tries += 1
+        return None, None
 
     def fill_database(self, able_to_fill_register, able_to_fill_login, registered, captcha, creds_for_register):
         data = {}
