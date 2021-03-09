@@ -38,7 +38,7 @@ class EmailVerifier:
         self.service = build('gmail', 'v1', credentials=creds)
 
 
-    def getUnreadEmailLinks(self, max=10, days=1):
+    def getUnreadEmailLinks(self, identifier, max=10, days=1):
 
         # request a list of all the messages
         result = self.service.users().messages().list(userId='me', labelIds=['UNREAD', 'INBOX', 'CATEGORY_UPDATES'], q=f'newer_than:{days}d', maxResults=max).execute()
@@ -49,23 +49,38 @@ class EmailVerifier:
             # Get the message from its id
             txt = self.service.users().messages().get(userId='me', id=msg['id'], format="full").execute()
             # Use try-except to avoid any Errors
+
             try:
                 # Get value of 'payload' from dictionary 'txt'
                 payload = txt['payload']
+                found_identifier = self.__getIdentifier(payload['headers'])
 
-                        # The Body of the message is in Encrypted format. So, we have to decode it.
-                # Get the data and decode it with base 64 decoder.
-                parts = payload.get('parts')[0]
-                data = parts['body']['data']
-                data = data.replace("-", "+").replace("_", "/")
-                decoded_data = base64.urlsafe_b64decode(data).decode('ascii')
-                regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+                if found_identifier == identifier:
+                    # The Body of the message is in Encrypted format. So, we have to decode it.
+                    # Get the data and decode it with base 64 decoder.
+                    parts = payload.get('parts')[0]
+                    data = parts['body']['data']
+                    data = data.replace("-", "+").replace("_", "/")
+                    decoded_data = base64.urlsafe_b64decode(data).decode('ascii')
+                    regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
 
-                links = re.findall(regex, decoded_data)
-                emailLinks[msg['id']] = links
+                    links = re.findall(regex, decoded_data)
+                    keywords = ['verify', 'verification', 'accept']
+                    for link in links:
+                        if any(x in link for x in keywords):
+                            return msg['id'], link
             except:
                 pass
-        return emailLinks
+        return None, None
+
+    def __getIdentifier(self, headers):
+        to_address = None
+        for item in headers:
+            if item['name'] == 'Delivered-To':
+                to_address = item['value']
+        identifier = re.findall('.*\+(.*)@.*', to_address)
+        return identifier[0] if identifier else None
+
 
     def messagesRead(self, msgIds):
         if msgIds:
@@ -77,3 +92,6 @@ class EmailVerifier:
         self.service.users().messages().modify(userId='me', id=msgId, body=msg_labels).execute()
 
 
+if __name__ == '__main__':
+    email = EmailVerifier()
+    print(email.getUnreadEmailLinks(days=3))
