@@ -3,6 +3,8 @@ import pickle
 import os.path
 import base64
 import re
+from typing import Tuple, Optional
+
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -15,6 +17,7 @@ class EmailVerifier:
     """Shows basic usage of the Gmail API.
     Lists the user's Gmail labels.
     """
+
     def __init__(self):
         creds = None
         # The file token.pickle stores the user's access and refresh tokens, and is
@@ -37,11 +40,11 @@ class EmailVerifier:
 
         self.service = build('gmail', 'v1', credentials=creds)
 
-
-    def getUnreadEmailLinks(self, identifier, max=10, days=1):
+    def getUnreadEmailLinks(self, identifier, max=10, days=1) -> Tuple[Optional[str], Optional[str]]:
 
         # request a list of all the messages
-        result = self.service.users().messages().list(userId='me', labelIds=['UNREAD', 'INBOX', 'CATEGORY_UPDATES'], q=f'newer_than:{days}d', maxResults=max).execute()
+        result = self.service.users().messages().list(userId='me', labelIds=['UNREAD', 'INBOX', 'CATEGORY_UPDATES'],
+                                                      q=f'newer_than:{days}d', maxResults=max).execute()
         messages = result.get('messages')
         # iterate through all the messages
         emailLinks = {}
@@ -73,7 +76,7 @@ class EmailVerifier:
                 pass
         return None, None
 
-    def __getIdentifier(self, headers):
+    def __getIdentifier(self, headers) -> Optional[str]:
         to_address = None
         for item in headers:
             if item['name'] == 'Delivered-To':
@@ -81,17 +84,12 @@ class EmailVerifier:
         identifier = re.findall('.*\+(.*)@.*', to_address)
         return identifier[0] if identifier else None
 
-
-    def messagesRead(self, msgIds):
+    def messagesRead(self, msgIds) -> None:
         if msgIds:
             msg_labels = {'removeLabelIds': ['UNREAD'], 'addLabelIds': [], 'ids': msgIds}
             self.service.users().messages().batchModify(userId='me', body=msg_labels).execute()
 
-    def messageRead(self, msgId):
+    def messageRead(self, msgId) -> None:
         msg_labels = {'removeLabelIds': ['UNREAD'], 'addLabelIds': []}
         self.service.users().messages().modify(userId='me', id=msgId, body=msg_labels).execute()
 
-
-if __name__ == '__main__':
-    email = EmailVerifier()
-    print(email.getUnreadEmailLinks(days=3))
