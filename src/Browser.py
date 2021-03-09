@@ -1,3 +1,5 @@
+from typing import Optional, Tuple
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
@@ -128,7 +130,7 @@ class Browser:
             self.fill_database(able_to_fill_register=True, able_to_fill_login=True, registered=True, captcha=False,
                                creds_for_register=creds_for_register)
 
-    def verifyEmail(self, max_tries=6):
+    def verifyEmail(self, max_tries=6) -> Tuple[Optional[str], Optional[str]]:
         tries = 1
         while tries <= max_tries:
             delay = 2**tries
