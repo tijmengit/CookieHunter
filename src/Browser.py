@@ -5,8 +5,8 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 from time import sleep
-from DatabaseManager import DatabaseManager
-from EmailVerifier import EmailVerifier
+from CookieHunter.src.DatabaseManager import DatabaseManager
+from CookieHunter.src.EmailVerifier import EmailVerifier
 import tldextract
 
 
@@ -55,6 +55,10 @@ class Browser:
                                   'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]',
                                   'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
+        self.cookie_accept_synonyms = [ 'Accept','accept','ACCEPT','bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
+                                  'accepteer','ACCEPTEER',  'keuze', 'choice', 'accept all cookies',
+                                        'Accept all cookies','Accept All Cookies', 'I Accept', "I Consent"]
+
 
     def filter_elements(self, element_list):
         iterator = filter(lambda element: element.is_displayed(), set(element_list))
@@ -159,7 +163,7 @@ class Browser:
         '''
         cookie_elements = ['cookieContainer', 'cookieOverlay', 'cookieAcceptForm']
 
-        # sleep(10)
+        sleep(5)
         # First check if there is indeed a cookie popup, otherwise you don't know what button you are clicking
         for el in cookie_elements:
             try:
@@ -170,23 +174,15 @@ class Browser:
         return False
 
     def cookie_accept(self):
-
-        # text which could be inside cookie accept buttons:
-        cookie_accept_elements = [ 'bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
-                                  'accepteer',  'Accept','accept', 'cookies', 'Cookies', 'keuze', 'choice']
-
-        for el in cookie_accept_elements:
+        accept_button_options = self.generic_buttons(self.cookie_accept_synonyms)
+        for b in accept_button_options:
             try:
-                accept_button_options = self.browser.find_elements_by_xpath(f"//button[contains(text(), {el})]")
-                for b in accept_button_options:
-                    try:
-                        b.click()
-                        self.browser.get((self.register_url))
-                        return
-                    except Exception as e:
-                        pass
+                b.click()
+                self.browser.get((self.home_url))
+                return
             except Exception as e:
                 pass
+
 
 
     def login(self):
@@ -247,6 +243,16 @@ class Browser:
 
         return self.filter_elements(element_list)
 
+    def generic_buttons(self, text_list):
+        button_set = set()
+        for syn in text_list:
+            # x_paths = [f'//button[text()={syn}]', f'//a[contains(text(), {syn})]',  f'//div[contains(text(), {syn})]']
+            x_paths = ['//button[text()="'+syn+'"]']
+            for path in x_paths:
+                buttons = self.browser.find_elements_by_xpath(path)
+                for b in buttons:
+                    button_set.add(b)
+        return self.filter_elements(list(button_set))
 
     def get_cookies(self):
         return self.browser.get_cookies()
