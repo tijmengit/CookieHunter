@@ -2,10 +2,9 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
-from selenium.webdriver.chrome.options import Options
-
 from time import sleep
-from DatabaseManager import DatabaseManager
+from CookieHunter.src.DatabaseManager import DatabaseManager
+from CookieHunter.src.EmailVerifier import EmailVerifier
 import tldextract
 import urllib.parse as urlparse
 from bs4 import BeautifulSoup as BS
@@ -21,6 +20,7 @@ class Browser:
         self.browser = webdriver.Chrome(driver_path, options=self.browser_options)
         self.browser.set_page_load_timeout(10)
         self.db = DatabaseManager()
+        self.emailVerifier = EmailVerifier()
         self.home_url = home_url
         self.login_url = login_url
         self.register_url = register_url
@@ -28,7 +28,9 @@ class Browser:
         self.identifier = ext.domain
         self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
-        self.email_address = "cookiehunterproject@gmail.com"
+        self.email_address = f'cookiehunterproject+{self.identifier}@gmail.com'
+        print(self.email_address)
+
         self.pwd = "passwordRandom123!"
         self.name = "Janssen"
         self.username = "CookieHunter007"
@@ -40,12 +42,13 @@ class Browser:
                                ]
         self.password_synonyms = ['user_password', 'password', 'pword', 'userpassword', 'userpwd', 'pwd', 'PWD',
                                   'u_password', 'passw', 'p_word', 'UserPassword', 'UserPwd', 'Pwd', 'pass', 'Password',
-                                  'User Password'
+                                  'User Password', 'Passwd', 'ConfirmPasswd', 'Confirm Password', 'Confirm password',
+                                  'onfirm Password', 'confirm password' , 'CnfrmPsswrd', 'ConfirmPwd', 'CnfrmPwd'
                                   ]
         self.name_synonyms = ['name_first', 'name', 'first_name', 'firstname', 'First_Name', 'f_name', 'firstName',
                               'User_efirstname', 'First_name', 'first_Name', 'NAME', 'F_NAME', 'FName',
                               'fname_', '_firstname', 'fullname', 'full_name', 'user_first_name', 'First Name', 'first name',
-                              'nc_firstname', 'nc_firstname_required',
+                              'nc_firstname', 'nc_firstname_required', 'First name',
 
                               'last_name', 'lastname', 'last_Name', 'l_name', 'lastName',
                               'User_elastname', 'last_name', 'Last_Name', 'l_NAME', 'lName',
@@ -57,10 +60,9 @@ class Browser:
                                   'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]',
                                   'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
-
-        # text which could be inside cookie accept buttons:
         self.cookie_accept_synonyms = [ 'Accept','accept','ACCEPT','bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
-                                  'accepteer','ACCEPTEER',  'keuze', 'choice', 'Continue', 'continue', 'accept all cookies', 'Accept all cookies','Accept All Cookies', 'I Accept', "I Consent"]
+                                  'accepteer','ACCEPTEER',  'keuze', 'choice', 'accept all cookies',
+                                        'Accept all cookies','Accept All Cookies', 'I Accept', "I Consent"]
 
         self.sign_up_synonyms = ['register', 'Register','REGISTER','registration', 'REGISTRATION','Registration', 'sign up', 'Sign up', 'Sign Up', 'SIGN UP']
 
@@ -110,23 +112,35 @@ class Browser:
 
         email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
         for field in email:
-            field.send_keys(self.email_address)
-            creds_for_register['email'] = self.email_address
-
-        pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
-        for field in pwd:
-            field.send_keys(self.pwd)
-            creds_for_register['pwd'] = self.pwd
+            if field.get_attribute("value") == "":
+                field.send_keys(self.email_address)
+                creds_for_register['email'] = self.email_address
+            else:
+                print("Field already filled by others")
 
         username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
         for field in username:
-            field.send_keys(self.username)
-            creds_for_register['username'] = self.username
+            if field.get_attribute("value") == "":
+                field.send_keys(self.username)
+                creds_for_register['username'] = self.username
+            else:
+                print("Field already filled by others")
+
+        pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
+        for field in pwd:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.pwd)
+                creds_for_register['pwd'] = self.pwd
+            else:
+                print("Field already filled by others")
 
         name = self.generic_element_finder("//input[@type='name']", self.name_synonyms)
-        for field in name :
-            field.send_keys(self.name)
-            creds_for_register['name'] = self.name
+        for field in name:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.name)
+                creds_for_register['name'] = self.name
+            else:
+                print("Field already filled by others")
 
         print("form filling complete")
         sleep(10)
@@ -142,12 +156,30 @@ class Browser:
         # button = browser.findElement(By.xpath("//button[text()='Sign up']")).click();
         # button.click()
 
-        # TODO: add emailVerifier,
+        msgId, link = self.verifyEmail()
+        if msgId:
+            self.browser.get(link)
+            sleep(3)
+            self.browser.close()
+            self.db.update_web_page(self.identifier, {'verified': True})
+            self.emailVerifier.messageRead(msgId)
 
         self.login()
         if self.login_oracle():
             self.fill_database(able_to_fill_register=True, able_to_fill_login=True, registered=True, captcha=False,
                                creds_for_register=creds_for_register)
+
+    def verifyEmail(self, max_tries=6) -> Tuple[Optional[str], Optional[str]]:
+        tries = 1
+        while tries <= max_tries:
+            delay = 2**tries
+            sleep(delay)
+            msgId, link = self.emailVerifier.getUnreadEmailLinks(self.identifier, days=30)
+            if link:
+                return msgId, link
+
+            tries += 1
+        return None, None
 
     def fill_database(self, able_to_fill_register, able_to_fill_login, registered, captcha, creds_for_register):
         data = {}
@@ -160,6 +192,8 @@ class Browser:
 
 
 
+
+
     def cookie_box_oracle(self):
         '''
         Function to check for a cookie box, which asks for consent
@@ -167,7 +201,7 @@ class Browser:
         '''
         cookie_elements = ['cookieContainer', 'cookieOverlay', 'cookieAcceptForm']
 
-        # sleep(10)
+        sleep(5)
         # First check if there is indeed a cookie popup, otherwise you don't know what button you are clicking
         for el in cookie_elements:
             try:
@@ -247,11 +281,24 @@ class Browser:
         self.browser.get((self.login_url))
         email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
         for field in email:
-            field.send_keys(self.email_address)
+            if field.get_attribute("value") == "":
+                field.send_keys(self.email_address)
+            else:
+                print("Field already filled by others")
+
+        username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
+        for field in username:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.username)
+            else:
+                print("Field already filled by others")
 
         pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
         for field in pwd:
-            field.send_keys(self.pwd)
+            if field.get_attribute("value") == "":
+                field.send_keys(self.pwd)
+            else:
+                print("Field already filled by others")
 
         pwd.submit()
 
@@ -273,7 +320,6 @@ class Browser:
 
                 element = self.browser.find_elements(By.TAG_NAME, text)
                 element_list = element_list + element
-                # TODO: why not use self.browser.find_element_by_xpath("//*[contains(@id, text')]")
 
                 element = self.browser.find_elements(By.ID, text)
                 element_list = element_list + element
@@ -288,6 +334,16 @@ class Browser:
 
         return self.filter_elements(element_list)
 
+    def generic_buttons(self, text_list):
+        button_set = set()
+        for syn in text_list:
+            # x_paths = [f'//button[text()={syn}]', f'//a[contains(text(), {syn})]',  f'//div[contains(text(), {syn})]']
+            x_paths = ['//button[text()="'+syn+'"]']
+            for path in x_paths:
+                buttons = self.browser.find_elements_by_xpath(path)
+                for b in buttons:
+                    button_set.add(b)
+        return self.filter_elements(list(button_set))
     def generic_input_element_finder(self, text_list):
         '''
         This function returns generic input elements.
