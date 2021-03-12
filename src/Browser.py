@@ -4,6 +4,8 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.chrome.options import Options
+
 from time import sleep
 from CookieHunter.src.DatabaseManager import DatabaseManager
 from CookieHunter.src.EmailVerifier import EmailVerifier
@@ -13,6 +15,14 @@ import tldextract
 class Browser:
 
     def __init__(self, home_url, login_url, register_url, driver_path):
+        self.browser_options = Options()
+        self.prefs = {
+            "profile.default_content_setting_values.notifications": 2,
+            "profile.managed_default_content_settings.popups": 2,
+            "translate_whitelists": self.language_whitelist(),
+            "translate": {"enabled": "true"}
+        }
+        self.browser_options.add_experimental_option("prefs", self.prefs)
         self.browser = webdriver.Chrome(driver_path)
         self.db = DatabaseManager()
         self.emailVerifier = EmailVerifier()
@@ -280,3 +290,22 @@ class Browser:
 
     def close(self):
         self.browser.quit()
+
+    def language_whitelist(self):
+        languages = ["af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "ceb", "co", "cs", "cy", "da", "de",
+                     "el", "en",
+                     "eo", "es", "et", "eu", "fa", "fi", "fr", "fy", "ga", "gd", "gl", "gu", "ha", "haw", "hi",
+                     "hmn", "hr",
+                     "ht", "hu", "hy", "id", "ig", "is", "it", "iw", "ja", "jv", "ka", "kk", "km", "kn", "ko", "ku",
+                     "ky",
+                     "la", "lb", "lo", "lt", "lv", "mg", "mi", "mk", "ml", "mn", "mr", "ms", "mt", "my", "ne", "nl",
+                     "no",
+                     "ny", "or", "pa", "pl", "ps", "pt", "ro", "ru", "rw", "sd", "si", "sk", "sl", "sm", "sn", "so",
+                     "sq",
+                     "sr", "st", "su", "sv", "sw", "ta", "te", "tg", "th", "tk", "tl", "tr", "tt", "ug", "uk", "ur",
+                     "uz",
+                     "vi", "xh", "yi", "yo", "zh-CN", "zh-TW", "zu"]
+        dict = {}
+        for l in languages:
+            dict[l] = "en"
+        return dict
