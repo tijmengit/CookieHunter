@@ -11,7 +11,7 @@ if __name__ == "__main__":
     with open('../data/top-1m.csv') as sites_file:
         sites = csv.reader(sites_file, delimiter=',')
         line_count=0
-        start_at = 531
+        start_at = 10027
         for row in sites:
             if line_count < start_at:
                 line_count += 1

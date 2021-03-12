@@ -9,6 +9,7 @@ from selenium.webdriver.chrome.options import Options
 from time import sleep
 from CookieHunter.src.DatabaseManager import DatabaseManager
 from CookieHunter.src.EmailVerifier import EmailVerifier
+from CookieHunter.src.Helper import *
 import tldextract
 import urllib.parse as urlparse
 from bs4 import BeautifulSoup as BS
@@ -20,7 +21,7 @@ class Browser:
         self.prefs = {
             "profile.default_content_setting_values.notifications": 2,
             "profile.managed_default_content_settings.popups": 2,
-            "translate_whitelists": self.language_whitelist(),
+            "translate_whitelists": language_whitelist(),
             "translate": {"enabled": "true"}
         }
         self.browser_options.add_experimental_option("prefs", self.prefs)
@@ -67,38 +68,45 @@ class Browser:
                                   'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]',
                                   'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
-        self.cookie_accept_synonyms = [ 'Accept','accept','ACCEPT','bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
-                                  'accepteer','ACCEPTEER',  'keuze', 'choice', 'Continue', 'continue', 'accept all cookies', 'Accept all cookies','Accept All Cookies', 'I Accept', "I Consent"]
+        self.cookie_accept_synonyms = [ 'accept','bevestig', 'confirm', 'accepteer','keuze', 'choice', 'accept all cookies',
+                                         'I accept', "I Consent"]
+        create_synonyms(self.cookie_accept_synonyms)
 
-        self.sign_up_synonyms = ['register', 'Register','REGISTER','registration', 'REGISTRATION','Registration', 'sign up', 'Sign up', 'Sign Up', 'SIGN UP']
+        self.sign_up_synonyms = ['register','registration', 'sign up','signup','createuser', 'create user']
+        create_synonyms(self.sign_up_synonyms)
 
-        self.login_synonyms = ['login','LOGIN','Login', 'log-in', 'log in', 'Log in']
+        self.login_synonyms = ['login', 'log-in', 'log in']
+        create_synonyms(self.login_synonyms)
 
-    # def create_synonyms(self, word_list):
-    #     new_list =[]
-    #     for word in word_list:
-    #         # only first letter:
-    #         new_list.append(word.upper())
-    #         if ' ' in word:
-    #             words = word.split(' ')
-    #             for w in words:
-    #                 tmp_list = self.rewrite(w)
-    #                 new_list.extend(tmp_list)
-    #             new_list.append('-'.join(words))
-    #             new_list.append(''.join(words))
-    #         else:
-    #             new_list.extend(self.rewrite(word))
-    #     return new_list
-    #
-    # def rewrite(self, word):
-    #     tmp_list = []
-    #     tmp_list.append(word.capitalize())
-    #     tmp_list.append(word.upper())
-    #     return tmp_list
 
     def filter_elements(self, element_list):
         iterator = filter(lambda element: element.is_displayed(), set(element_list))
         return list(iterator)
+
+    def login(self):
+        self.browser.get((self.login_url))
+        email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
+        for field in email:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.email_address)
+            else:
+                print("Field already filled by others")
+
+        username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
+        for field in username:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.username)
+            else:
+                print("Field already filled by others")
+
+        pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
+        for field in pwd:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.pwd)
+            else:
+                print("Field already filled by others")
+
+        pwd.submit()
 
     def register(self):
         if not self.register_url:
@@ -156,11 +164,6 @@ class Browser:
 
     def submit_registration(self, el, creds_for_register):
         el.submit()
-        # button = self.browser.find_element(By.XPATH, "//button[@type='submit']")
-        # button.click()
-        # name.submit()
-        # button = browser.findElement(By.xpath("//button[text()='Sign up']")).click();
-        # button.click()
 
         msgId, link = self.verifyEmail()
         if msgId:
@@ -195,8 +198,6 @@ class Browser:
         data['registered'] = registered
         data['captcha'] = captcha
         self.db.update_web_page(self.identifier, data)
-
-
 
 
 
@@ -255,7 +256,6 @@ class Browser:
         base = urlparse.urlparse(self.home_url).netloc
         handled = []
 
-
         while queue:
             page = queue.pop(0)
             self.browser.get(page[0])
@@ -267,6 +267,8 @@ class Browser:
                 parsed_link = urlparse.urlparse(full_link)
                 path = parsed_link.path.split('/')
                 elem = path[1] if len(path) >= 2 else ''
+                if elem == 'signup':
+                    print(elem)
                 # create clean link without queries, parameters or fragments
                 clean_link = f'{parsed_link.scheme}://{parsed_link.netloc}{parsed_link.path}'
 
@@ -282,31 +284,6 @@ class Browser:
                     queue = sorted(queue, key=lambda x: x[1])
 
         return found
-
-    def login(self):
-        self.browser.get((self.login_url))
-        email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
-        for field in email:
-            if field.get_attribute("value") == "":
-                field.send_keys(self.email_address)
-            else:
-                print("Field already filled by others")
-
-        username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
-        for field in username:
-            if field.get_attribute("value") == "":
-                field.send_keys(self.username)
-            else:
-                print("Field already filled by others")
-
-        pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
-        for field in pwd:
-            if field.get_attribute("value") == "":
-                field.send_keys(self.pwd)
-            else:
-                print("Field already filled by others")
-
-        pwd.submit()
 
     def login_oracle(self):
         logged_in = self.name in self.browser.page_source
@@ -397,16 +374,5 @@ class Browser:
     def close(self):
         self.browser.quit()
 
-    def language_whitelist(self):
-        languages = ["af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "ceb", "co", "cs", "cy", "da", "de", "el", "en",
-                "eo", "es", "et", "eu", "fa", "fi", "fr", "fy", "ga", "gd", "gl", "gu", "ha", "haw", "hi", "hmn", "hr",
-                "ht", "hu", "hy", "id", "ig", "is", "it", "iw", "ja", "jv", "ka", "kk", "km", "kn", "ko", "ku", "ky",
-                "la", "lb", "lo", "lt", "lv", "mg", "mi", "mk", "ml", "mn", "mr", "ms", "mt", "my", "ne", "nl", "no",
-                "ny", "or", "pa", "pl", "ps", "pt", "ro", "ru", "rw", "sd", "si", "sk", "sl", "sm", "sn", "so", "sq",
-                "sr", "st", "su", "sv", "sw", "ta", "te", "tg", "th", "tk", "tl", "tr", "tt", "ug", "uk", "ur", "uz",
-                "vi", "xh", "yi", "yo", "zh-CN", "zh-TW", "zu"]
-        dict = {}
-        for l in languages:
-            dict[l] = "en"
-        return dict
+
 
