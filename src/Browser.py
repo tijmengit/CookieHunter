@@ -1,13 +1,18 @@
+from typing import Optional, Tuple
+
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.chrome.options import Options
+
 from time import sleep
 from CookieHunter.src.DatabaseManager import DatabaseManager
 from CookieHunter.src.EmailVerifier import EmailVerifier
 import tldextract
 import urllib.parse as urlparse
 from bs4 import BeautifulSoup as BS
+
 class Browser:
 
     def __init__(self, home_url, login_url, register_url, driver_path):
@@ -15,18 +20,20 @@ class Browser:
         self.prefs = {
             "profile.default_content_setting_values.notifications": 2,
             "profile.managed_default_content_settings.popups": 2,
+            "translate_whitelists": self.language_whitelist(),
+            "translate": {"enabled": "true"}
         }
         self.browser_options.add_experimental_option("prefs", self.prefs)
         self.browser = webdriver.Chrome(driver_path, options=self.browser_options)
         self.browser.set_page_load_timeout(10)
-        self.db = DatabaseManager()
+        # self.db = DatabaseManager()
         self.emailVerifier = EmailVerifier()
         self.home_url = home_url
         self.login_url = login_url
         self.register_url = register_url
         ext = tldextract.extract(home_url)
         self.identifier = ext.domain
-        self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
+        # self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
         self.email_address = f'cookiehunterproject+{self.identifier}@gmail.com'
         print(self.email_address)
@@ -61,8 +68,7 @@ class Browser:
                                   'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
         self.cookie_accept_synonyms = [ 'Accept','accept','ACCEPT','bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
-                                  'accepteer','ACCEPTEER',  'keuze', 'choice', 'accept all cookies',
-                                        'Accept all cookies','Accept All Cookies', 'I Accept', "I Consent"]
+                                  'accepteer','ACCEPTEER',  'keuze', 'choice', 'Continue', 'continue', 'accept all cookies', 'Accept all cookies','Accept All Cookies', 'I Accept', "I Consent"]
 
         self.sign_up_synonyms = ['register', 'Register','REGISTER','registration', 'REGISTRATION','Registration', 'sign up', 'Sign up', 'Sign Up', 'SIGN UP']
 
@@ -334,16 +340,7 @@ class Browser:
 
         return self.filter_elements(element_list)
 
-    def generic_buttons(self, text_list):
-        button_set = set()
-        for syn in text_list:
-            # x_paths = [f'//button[text()={syn}]', f'//a[contains(text(), {syn})]',  f'//div[contains(text(), {syn})]']
-            x_paths = ['//button[text()="'+syn+'"]']
-            for path in x_paths:
-                buttons = self.browser.find_elements_by_xpath(path)
-                for b in buttons:
-                    button_set.add(b)
-        return self.filter_elements(list(button_set))
+
     def generic_input_element_finder(self, text_list):
         '''
         This function returns generic input elements.
@@ -399,3 +396,17 @@ class Browser:
 
     def close(self):
         self.browser.quit()
+
+    def language_whitelist(self):
+        languages = ["af", "am", "ar", "az", "be", "bg", "bn", "bs", "ca", "ceb", "co", "cs", "cy", "da", "de", "el", "en",
+                "eo", "es", "et", "eu", "fa", "fi", "fr", "fy", "ga", "gd", "gl", "gu", "ha", "haw", "hi", "hmn", "hr",
+                "ht", "hu", "hy", "id", "ig", "is", "it", "iw", "ja", "jv", "ka", "kk", "km", "kn", "ko", "ku", "ky",
+                "la", "lb", "lo", "lt", "lv", "mg", "mi", "mk", "ml", "mn", "mr", "ms", "mt", "my", "ne", "nl", "no",
+                "ny", "or", "pa", "pl", "ps", "pt", "ro", "ru", "rw", "sd", "si", "sk", "sl", "sm", "sn", "so", "sq",
+                "sr", "st", "su", "sv", "sw", "ta", "te", "tg", "th", "tk", "tl", "tr", "tt", "ug", "uk", "ur", "uz",
+                "vi", "xh", "yi", "yo", "zh-CN", "zh-TW", "zu"]
+        dict = {}
+        for l in languages:
+            dict[l] = "en"
+        return dict
+
