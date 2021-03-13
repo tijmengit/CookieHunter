@@ -44,20 +44,72 @@ class PrivacyAuditor:
         self.cookies = cookies
         self.information = information
 
+        print('======= Interesting Pages ======')
         pages = self.get_interesting_pages()
-        pprint(pages)
-        page_leaks = self.find_page_leaks(pages)
-        print(page_leaks)
+        print(pages, '\n')
 
-    def find_page_leaks(self, pages: List[str]) -> Set[str]:
         browser = self.create_browser(True)
+
+        print('========== Page Leaks ==========')
+        page_leaks = self.find_page_leaks(browser, pages)
+        print(page_leaks, '\n')
+
+        print('========= Cookie Leaks =========')
+        cookie_leaks = self.inspect_cookies(browser)
+        print(cookie_leaks, '\n')
+
+        print('========== URL Leaks ===========')
+        url_leaks = self.inspect_urls(browser, pages)
+        print(url_leaks, '\n')
+
+        print('========= Storage Leaks ========')
+        storage_leaks = self.inspect_storage(browser)
+        print(storage_leaks, '\n')
+
+        browser.quit()
+
+    def inspect_urls(self, browser: WebDriver, urls: List[str]) -> Set[str]:
+        leaks = set()
+        for url in urls:
+            for info_type, info in self.information.items():
+                if urlparse.quote(info) in url:
+                    leaks.add(info_type)
+        return leaks
+
+    def inspect_storage(self, browser: WebDriver) -> Set[str]:
+        leaks = set()
+
+        local = browser.execute_script('return {...window.localStorage}')
+        session = browser.execute_script('return {...window.sessionStorage}')
+
+        for info_type, info in self.information.items():
+            for name, value in local.items():
+                if info == name or info == value:
+                    leaks.add(info_type)
+
+            for name, value in session.items():
+                if info == name or info == value:
+                    leaks.add(info_type)
+
+        return leaks
+
+    def inspect_cookies(self, browser: WebDriver) -> Set[str]:
+        leaks = set()
+        cookies = browser.get_cookies()
+        for cookie in cookies:
+            for info_type, info in self.information.items():
+                if info == cookie['name'] or info == cookie['value']:
+                    leaks.add(info_type)
+        return leaks
+
+    def find_page_leaks(self, browser: WebDriver, pages: List[str]) -> Set[str]:
         leaks = set()
         for page in pages:
             browser.get(page)
-            for type, info in self.information.items():
+            for info_type, info in self.information.items():
                 elements = browser.find_elements_by_xpath(f'//*[text()="{info}" or @value="{info}"]')
                 if elements:
-                    leaks.add(type)
+                    leaks.add(info_type)
         return leaks
 
     def get_interesting_pages(self) -> Set[str]:
@@ -125,10 +177,15 @@ if __name__ == '__main__':
         'LOCALAPPDATA') + '/ChromeDriver/chromedriver' if platform.system() == 'Windows' else '/usr/local/sbin/chromedriver'
     url = 'https://www.goodreads.com/'
     stolen_cookies = [
-        {'name': '_session_id2', 'value': '5390adc1e365869463f3f2396a906807', 'domain': 'www.goodreads.com'},
+        {'name': '_session_id2', 'value': '8b2658f5d3a4bbff643eed8d2921c654', 'domain': 'www.goodreads.com'},
         {'name': 'locale', 'value': 'en', 'domain': 'www.goodreads.com'},
         {'name': 'logged_out_browsing_page_count', 'value': '2', 'domain': 'www.goodreads.com'},
         {'name': 'cssid', 'value': '848-2350035-9701439', 'domain': 'www.goodreads.com'},
+        {'name': 'test1', 'value': 'cookiehunterproject', 'domain': 'www.goodreads.com'},
+        {'name': 'test2', 'value': 'CookieHunter007', 'domain': 'www.goodreads.com'},
+        {'name': 'test3', 'value': 'cookiehunterproject@gmail.com', 'domain': 'www.goodreads.com'},
+        {'name': 'test4', 'value': 'Jan Janssen', 'domain': 'www.goodreads.com'},
+
     ]
 
     reference_information = {
