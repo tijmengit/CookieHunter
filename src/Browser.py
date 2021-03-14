@@ -17,7 +17,8 @@ class Browser:
         self.register_url = register_url
         ext = tldextract.extract(home_url)
         self.identifier = ext.domain
-        self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
+        self.db.add_new_webpage(self.identifier,
+                                {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
         self.fields = ["email", "password", "name", "username"]
         self.credentials = {}
@@ -27,30 +28,33 @@ class Browser:
         self.credentials["username"] = "CookieHunter007"
         self.synonyms = {}
         self.synonyms["email"] = ['user_email', 'email', 'e_mail', 'useremail', 'userEmail', 'mail', 'uemail',
-                               'User_email', 'Email', 'E_mail', 'Useremail', 'UserEmail', 'Mail', 'Uemail',
-                               'User_email_address', 'Email_address', 'email_address', 'emailadress',
-                               'UserEmailAddress', 'Email address', 'Email Address', 'EMAIL',
-                               'MailAdress'
-                               ]
+                                  'User_email', 'Email', 'E_mail', 'Useremail', 'UserEmail', 'Mail', 'Uemail',
+                                  'User_email_address', 'Email_address', 'email_address', 'emailadress',
+                                  'UserEmailAddress', 'Email address', 'Email Address', 'EMAIL',
+                                  'MailAdress'
+                                  ]
         self.synonyms["password"] = ['user_password', 'password', 'pword', 'userpassword', 'userpwd', 'pwd', 'PWD',
-                                  'u_password', 'passw', 'p_word', 'UserPassword', 'UserPwd', 'Pwd', 'pass', 'Password',
-                                  'User Password', 'Passwd', 'ConfirmPasswd', 'Confirm Password', 'Confirm password',
-                                  'onfirm Password', 'confirm password' , 'CnfrmPsswrd', 'ConfirmPwd', 'CnfrmPwd'
-                                  ]
+                                     'u_password', 'passw', 'p_word', 'UserPassword', 'UserPwd', 'Pwd', 'pass',
+                                     'Password',
+                                     'User Password', 'Passwd', 'ConfirmPasswd', 'Confirm Password', 'Confirm password',
+                                     'onfirm Password', 'confirm password', 'CnfrmPsswrd', 'ConfirmPwd', 'CnfrmPwd'
+                                     ]
         self.synonyms["name"] = ['name_first', 'name', 'first_name', 'firstname', 'First_Name', 'f_name', 'firstName',
-                              'User_efirstname', 'First_name', 'first_Name', 'NAME', 'F_NAME', 'FName',
-                              'fname_', '_firstname', 'fullname', 'full_name', 'user_first_name', 'First Name', 'first name',
-                              'nc_firstname', 'nc_firstname_required', 'First name', 'Name',
+                                 'User_efirstname', 'First_name', 'first_Name', 'NAME', 'F_NAME', 'FName',
+                                 'fname_', '_firstname', 'fullname', 'full_name', 'user_first_name', 'First Name',
+                                 'first name',
+                                 'nc_firstname', 'nc_firstname_required', 'First name', 'Name',
 
-                              'last_name', 'lastname', 'last_Name', 'l_name', 'lastName',
-                              'User_elastname', 'last_name', 'Last_Name', 'l_NAME', 'lName',
-                              'lname_', '_lastname', 'user_last_name', 'Last Name', 'Last name', 'last name',
-                              'nc_lastname', 'nc_lastname_required'
-                              ]
+                                 'last_name', 'lastname', 'last_Name', 'l_name', 'lastName',
+                                 'User_elastname', 'last_name', 'Last_Name', 'l_NAME', 'lName',
+                                 'lname_', '_lastname', 'user_last_name', 'Last Name', 'Last name', 'last name',
+                                 'nc_lastname', 'nc_lastname_required'
+                                 ]
         self.synonyms["username"] = ['username', 'uname', 'user_id', 'user_name', 'uName', 'u_Name', 'UserName',
-                                  'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]',
-                                  'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
-                                  ]
+                                     'user_name_new', 'new_username', 'user_username', 'user_username',
+                                     'user[username]',
+                                     'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
+                                     ]
         self.label_assignments = {}
         self.attribute_assignments = {}
 
@@ -61,6 +65,7 @@ class Browser:
     def register(self):
         self.browser.get((self.register_url))
         creds_for_register = {}
+
         if self.cookie_box_oracle():
             self.cookie_accept()
 
@@ -68,21 +73,26 @@ class Browser:
         for check in checks:
             check.click()
 
+        # label and input field searching done here
         for field in self.fields:
             self.label_finder(self.synonyms[field], field)
-            self.generic_element_finder("//input[@type='{plc}']".format(plc = field), self.synonyms[field], field)
+            self.generic_element_finder("//input[@type='{plc}']".format(plc=field), self.synonyms[field], field)
 
+        # filling in the elements depending on their labels here, we iterate through labels and look for the input fields to match with labels for attributes
         for web_element, field in self.label_assignments.items():
             id_value = web_element.get_attribute("for")
+            # Check for the labels without any for attribute
             if id_value is not None:
                 for input_element in self.attribute_assignments.keys():
                     if input_element.get_attribute("value") == "":
                         id_from_element = input_element.get_attribute("id")
+                        # this is where we match an element based on the label for attribute and the id of the element
                         if id_from_element is not None and id_value in id_from_element:
                             self.attribute_assignments[input_element] = field
                             input_element.send_keys(self.credentials[field])
                             creds_for_register[field] = self.credentials[field]
 
+        # for the elements that were not matched by the labels, we fill based on their html attributes
         for web_element, field in self.attribute_assignments.items():
             if web_element.get_attribute("value") == "":
                 web_element.send_keys(self.credentials[field])
@@ -118,7 +128,6 @@ class Browser:
         data['captcha'] = captcha
         self.db.update_web_page(self.identifier, data)
 
-
     def cookie_box_oracle(self):
         '''
         Function to check for a cookie box, which asks for consent
@@ -139,8 +148,8 @@ class Browser:
     def cookie_accept(self):
 
         # text which could be inside cookie accept buttons:
-        cookie_accept_elements = [ 'bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
-                                  'accepteer',  'Accept','accept', 'cookies', 'Cookies', 'keuze', 'choice']
+        cookie_accept_elements = ['bevestig', 'Bevestig', 'confirm', 'Confirm', 'Accepteer',
+                                  'accepteer', 'Accept', 'accept', 'cookies', 'Cookies', 'keuze', 'choice']
 
         for el in cookie_accept_elements:
             try:
@@ -154,7 +163,6 @@ class Browser:
                         pass
             except Exception as e:
                 pass
-
 
     def login(self):
         self.browser.get((self.login_url))
@@ -190,39 +198,55 @@ class Browser:
         self.browser.refresh()
 
     def generic_element_finder(self, x_path_text, text_list, type_string):
+        '''
+        Function that finds form elements that will be filled
+        :param x_path_text: "//input[@type='{plc}']" finding inputs based on their types
+        :param text_list: manually curated keyword list
+        :param type_string: what type of credentials we are filling
+        :return: None
+        '''
         element_list = []
         element = self.browser.find_elements(By.XPATH, x_path_text)
         element_list = element_list + element
 
         for text in text_list:
-                element = self.browser.find_elements(By.NAME, text)
-                element_list = element_list + element
+            element = self.browser.find_elements(By.NAME, text)
+            element_list = element_list + element
 
-                element = self.browser.find_elements(By.TAG_NAME, text)
-                element_list = element_list + element
+            element = self.browser.find_elements(By.TAG_NAME, text)
+            element_list = element_list + element
 
-                element = self.browser.find_elements(By.ID, text)
-                element_list = element_list + element
+            element = self.browser.find_elements(By.ID, text)
+            element_list = element_list + element
 
-                placeholder = "//input[@placeholder=\"{plc}\"]".format(plc = text)
-                element = self.browser.find_elements(By.XPATH, placeholder)
-                element_list = element_list + element
+            placeholder = "//input[@placeholder=\"{plc}\"]".format(plc=text)
+            element = self.browser.find_elements(By.XPATH, placeholder)
+            element_list = element_list + element
 
-                placeholder = "//input[@aria-label=\"{plc}\"]".format(plc = text)
-                element = self.browser.find_elements(By.XPATH, placeholder)
-                element_list = element_list + element
+            placeholder = "//input[@aria-label=\"{plc}\"]".format(plc=text)
+            element = self.browser.find_elements(By.XPATH, placeholder)
+            element_list = element_list + element
 
         element_list = self.filter_elements(element_list)
+        # After finding the elements and filtering for duplicates and hidden elements, we put them in the attribute_assignments dictionary with the value being the type of credentials we are filling
         for web_element in element_list:
             self.attribute_assignments[web_element] = type_string
 
     def label_finder(self, text_list, type_string):
+        '''
+        Function that finds label elements
+        :param text_list: manually curated keyword list
+        :param type_string: what type of credentials we are filling
+        :return: None
+        '''
         element_list = []
         label_xpath = "//label[contains(text(),'{el}')]"
         for text in text_list:
-                element = self.browser.find_elements(By.XPATH, label_xpath.format(el=text))
-                element_list = element_list + element
+            element = self.browser.find_elements(By.XPATH, label_xpath.format(el=text))
+            element_list = element_list + element
         element_list = self.filter_elements(element_list)
+        # After finding the labels and filtering for duplicates and hidden elements, we put them in the label_assignments dictionary with the value being the type of credentials we are filling
+        # We also add their for attribute into the keyword list so that the generic_element_finder can find the input field to fill
         for web_element in element_list:
             self.label_assignments[web_element] = type_string
             id_value = web_element.get_attribute("for")
