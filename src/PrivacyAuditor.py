@@ -8,6 +8,8 @@ from bs4 import BeautifulSoup as BS
 import urllib.parse as urlparse
 from pprint import pprint
 import multiprocessing as MP
+import re
+import hashlib
 
 from selenium.webdriver.chrome.webdriver import WebDriver
 
@@ -39,10 +41,11 @@ class PrivacyAuditor:
         }
         self.browser_options.add_experimental_option("prefs", self.prefs)
 
-    def audit(self, base_url: str, cookies: List[Dict[str, str]], information: Dict[str, str]) -> None:
+    def audit(self, base_url: str, cookies: List[Dict[str, str]], information: Dict[str, str]) -> Dict[str, List[str]]:
         self.base_url = base_url
         self.cookies = cookies
-        self.information = information
+        self.information = self.augment_reference_information(information)
+
 
         print('======= Interesting Pages ======')
         pages = self.get_interesting_pages()
@@ -68,11 +71,21 @@ class PrivacyAuditor:
 
         browser.quit()
 
+        return {
+            'page_leaks': list(page_leaks),
+            'cookie_leaks': list(cookie_leaks),
+            'url_leaks': list(url_leaks),
+            'storage_leaks': list(storage_leaks),
+        }
+
     def inspect_urls(self, browser: WebDriver, urls: List[str]) -> Set[str]:
         leaks = set()
         for url in urls:
             for info_type, info in self.information.items():
-                if urlparse.quote(info) in url:
+                page_url = urlparse.unquote(url)
+                page_url = re.sub('[^A-Za-z]+', '', page_url).lower()
+                info_tmp = re.sub('[^A-Za-z]+', '', info).lower()
+                if info_tmp in page_url:
                     leaks.add(info_type)
         return leaks
 
@@ -171,19 +184,29 @@ class PrivacyAuditor:
             browser.refresh()
         return browser
 
+    def augment_reference_information(self, information: Dict[str, str]) -> Dict[str, str]:
+        augmented = {}
+        hashes = ['md5', 'sha1', 'sha256', 'sha512']
+        for key, value in information.items():
+            augmented[key] = value
+            for hash in hashes:
+                augmented[f'{key}_{hash}'] = getattr(hashlib, hash)(str.encode(value)).hexdigest()
+
+        return augmented
+
 
 if __name__ == '__main__':
     PATH = os.getenv(
         'LOCALAPPDATA') + '/ChromeDriver/chromedriver' if platform.system() == 'Windows' else '/usr/local/sbin/chromedriver'
-    url = 'https://www.goodreads.com/'
+    audit_url = 'https://www.goodreads.com/'
     stolen_cookies = [
-        {'name': '_session_id2', 'value': '8b2658f5d3a4bbff643eed8d2921c654', 'domain': 'www.goodreads.com'},
+        {'name': '_session_id2', 'value': '1faac5fd1782ccdf1def9419bde66406', 'domain': 'www.goodreads.com'},
         {'name': 'locale', 'value': 'en', 'domain': 'www.goodreads.com'},
         {'name': 'logged_out_browsing_page_count', 'value': '2', 'domain': 'www.goodreads.com'},
         {'name': 'cssid', 'value': '848-2350035-9701439', 'domain': 'www.goodreads.com'},
         {'name': 'test1', 'value': 'cookiehunterproject', 'domain': 'www.goodreads.com'},
         {'name': 'test2', 'value': 'CookieHunter007', 'domain': 'www.goodreads.com'},
-        {'name': 'test3', 'value': 'cookiehunterproject@gmail.com', 'domain': 'www.goodreads.com'},
+        {'name': 'test3', 'value': 'd5c2fba5e06e4ef718282cc6331ce158', 'domain': 'www.goodreads.com'},
         {'name': 'test4', 'value': 'Jan Janssen', 'domain': 'www.goodreads.com'},
 
     ]
@@ -203,4 +226,6 @@ if __name__ == '__main__':
     options = []
 
     auditor = PrivacyAuditor(PATH, options)
-    auditor.audit(url, stolen_cookies, reference_information)
+    leaks = auditor.audit(audit_url, stolen_cookies, reference_information)
+    print('========= Found leaks ==========')
+    print(leaks)
