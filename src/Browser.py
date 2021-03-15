@@ -135,7 +135,6 @@ class Browser:
                 web_element.send_keys(self.credentials[field])
                 creds_for_register[field] = self.credentials[field]
 
-        print("form filling complete")
         sleep(10)
 
         # Comment this out to submit registration:
@@ -146,16 +145,21 @@ class Browser:
 
         msgId, link = self.verifyEmail()
         if msgId:
+            print("Verification mail received")
             self.browser.get(link)
             sleep(3)
             self.browser.close()
             self.db.update_web_page(self.identifier, {'verified': True})
             self.emailVerifier.messageRead(msgId)
 
-        self.login()
+        # Try and login for checking if registration was correct
+        self.login(accept_cookie=False)
         if self.login_oracle():
+            print('Login successful for ' + self.home_url)
             self.fill_database(able_to_fill_register=True, able_to_fill_login=True, registered=True, captcha=False,
                                creds_for_register=creds_for_register)
+        else:
+            print('Login unsuccessful for ' + self.home_url)
 
     def verifyEmail(self, max_tries=6) -> Tuple[Optional[str], Optional[str]]:
         tries = 1
@@ -206,12 +210,17 @@ class Browser:
             except Exception as e:
                 pass
 
-
     def navigate_to_register(self):
         url = self.get_sitemap(self.synonyms['register'])
         if len(url)>0:
             self.register_url = url[0]
             self.browser.get((self.register_url))
+
+    def navigate_to_login(self):
+        url = self.get_sitemap(self.synonyms['login'])
+        if len(url)>0:
+            self.login_url = url[0]
+            self.browser.get((self.login_url))
 
     def identify_form(self):
         pwd_fields = self.generic_input_element_finder(self.synonyms["password"])
@@ -224,8 +233,18 @@ class Browser:
             return 'login'
         return 'contact'
 
-    def login(self):
-        self.browser.get((self.login_url))
+    def login(self, accept_cookie):
+
+        if not self.login_url:
+            self.browser.get(self.home_url)
+        else:
+            self.browser.get(self.login_url)
+
+        if accept_cookie and self.cookie_box_oracle():
+            self.cookie_accept()
+
+        if not self.login_url:
+            self.navigate_to_login()
 
         if self.cookie_box_oracle():
             self.cookie_accept()
