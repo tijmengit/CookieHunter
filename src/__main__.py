@@ -1,8 +1,8 @@
 
 import sys
 import traceback
-from src.Browser import *
-from src.CookieAuditor import *
+from CookieHunter.src.Browser import *
+from CookieHunter.src.CookieAuditor import *
 
 if __name__ == "__main__":
     home_url = "https://www.goodreads.com"
