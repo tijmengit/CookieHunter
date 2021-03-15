@@ -76,17 +76,19 @@ class Browser:
                                   'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]',
                                   'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
-        self.cookie_accept_synonyms = [ 'accept','bevestig', 'confirm', 'accepteer','keuze', 'choice', 'accept all cookies',
-                                         'I accept', "I Consent"]
+        self.synonyms['cookie-accept'] = [ 'accept', 'confirm', 'choice', 'accept all cookies',
+                                         'I accept', "I Consent", "allow all cookies"]
+
+        self.synonyms['register'] = ['register','registration', 'sign up','signup','createuser', 'create user']
+
+        self.synonyms['login'] = ['login', 'log-in', 'log in']
+
         self.label_assignments = {}
         self.attribute_assignments = {}
-        create_synonyms(self.cookie_accept_synonyms)
 
-        self.sign_up_synonyms = ['register','registration', 'sign up','signup','createuser', 'create user']
-        create_synonyms(self.sign_up_synonyms)
-
-        self.login_synonyms = ['login', 'log-in', 'log in']
-        create_synonyms(self.login_synonyms)
+        create_synonyms(self.synonyms['cookie-accept'])
+        create_synonyms(self.synonyms['register'])
+        create_synonyms(self.synonyms['login'])
 
     def filter_elements(self, element_list):
         iterator = filter(lambda element: element.is_displayed(), set(element_list))
@@ -163,7 +165,6 @@ class Browser:
             msgId, link = self.emailVerifier.getUnreadEmailLinks(self.identifier, days=30)
             if link:
                 return msgId, link
-
             tries += 1
         return None, None
 
@@ -196,7 +197,7 @@ class Browser:
         return False
 
     def cookie_accept(self):
-        accept_button_options = self.generic_buttons(self.cookie_accept_synonyms)
+        accept_button_options = self.generic_buttons(self.synonyms['cookie-accept'])
         for b in accept_button_options:
             try:
                 b.click()
@@ -207,7 +208,7 @@ class Browser:
 
 
     def navigate_to_register(self):
-        url = self.get_sitemap(self.sign_up_synonyms)
+        url = self.get_sitemap(self.synonyms['register'])
         if len(url)>0:
             self.register_url = url[0]
             self.browser.get((self.register_url))
@@ -222,6 +223,7 @@ class Browser:
         if len(pwd_fields) == 1:
             return 'login'
         return 'contact'
+
     def login(self):
         self.browser.get((self.login_url))
 
@@ -278,7 +280,7 @@ class Browser:
                 if page[1] < depth\
                         and clean_link not in handled \
                         and clean_link not in found\
-                        and elem in self.login_synonyms:
+                        and elem in self.synonyms['login']:
                     queue.append((clean_link, page[1] + 1))
                     queue = sorted(queue, key=lambda x: x[1])
 
