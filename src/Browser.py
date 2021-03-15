@@ -149,22 +149,21 @@ class Browser:
                 print(e)
 
         msgId, link = self.verifyEmail()
+        email_received = False
         if msgId:
             print("Verification mail received")
+            email_received = True
             self.browser.get(link)
             sleep(3)
             self.browser.close()
             self.db.update_web_page(self.identifier, {'verified': True})
             self.emailVerifier.messageRead(msgId)
 
-        # Try and login for checking if registration was correct
-        self.login(accept_cookie=False)
-        if self.login_oracle():
-            print('Login successful for ' + self.home_url)
+        if email_received or self.registration_oracle(creds_for_register):
+            print(f'registration successful, adding {self.home_url} to database')
             self.fill_database(able_to_fill_register=True, able_to_fill_login=True, registered=True, captcha=False,
                                creds_for_register=creds_for_register)
-        else:
-            print('Login unsuccessful for ' + self.home_url)
+
 
 
     def verifyEmail(self, max_tries=6) -> Tuple[Optional[str], Optional[str]]:
@@ -272,7 +271,7 @@ class Browser:
 
         print("form filling complete")
 
-        # pwd.submit()
+
     def get_sitemap(self, keywords):
         depth = 2
         limit = 50
@@ -313,8 +312,38 @@ class Browser:
         logged_in = self.credentials["name"] in self.browser.page_source
         return logged_in
 
-    def registration_oracle(self):
-        pass
+    def registration_oracle(self, creds_for_register):
+        '''
+        3 checks for registration oracle:
+        1. visit registration url and check if input fields are still there
+        2. visit homepage and check for credentials passed to registration
+        3. attempt to login
+        '''
+        # 1. visit registration url and check for input fields used to register
+        self.browser.get(self.register_url)
+        for web_element, field in self.attribute_assignments.items():
+            if web_element.get_attribute("value") == "":
+                try:
+                    web_element.send_keys(self.credentials[field])
+                    print('Login successful for ' + self.home_url)
+                    return True
+                except Exception as e:
+                    continue
+
+        # 2. check for creds on homepage
+        self.browser.get(self.home_url)
+        for cred in creds_for_register:
+            if cred in self.browser.page_source:
+                print('Login successful for ' + self.home_url)
+                return True
+
+        # 3. attempt login
+        self.login(accept_cookie=False)
+        if self.login_oracle():
+            print('Login successful for ' + self.home_url)
+            return True
+        print('Login unsuccessful for ' + self.home_url)
+        return False
 
     def refresh(self):
         self.browser.refresh()
