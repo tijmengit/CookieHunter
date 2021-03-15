@@ -4,24 +4,37 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.wait import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from selenium.webdriver.chrome.options import Options
+
 from time import sleep
 from CookieHunter.src.DatabaseManager import DatabaseManager
 from CookieHunter.src.EmailVerifier import EmailVerifier
+from CookieHunter.src.Helper import *
 import tldextract
-
+import urllib.parse as urlparse
+from bs4 import BeautifulSoup as BS
 
 class Browser:
 
     def __init__(self, home_url, login_url, register_url, driver_path):
-        self.browser = webdriver.Chrome(driver_path)
-        self.db = DatabaseManager()
+        self.browser_options = Options()
+        self.prefs = {
+            "profile.default_content_setting_values.notifications": 2,
+            "profile.managed_default_content_settings.popups": 2,
+            "translate_whitelists": language_whitelist(),
+            "translate": {"enabled": "true"}
+        }
+        self.browser_options.add_experimental_option("prefs", self.prefs)
+        self.browser = webdriver.Chrome(driver_path, options=self.browser_options)
+        self.browser.set_page_load_timeout(10)
+        # self.db = DatabaseManager()
         self.emailVerifier = EmailVerifier()
         self.home_url = home_url
         self.login_url = login_url
         self.register_url = register_url
         ext = tldextract.extract(home_url)
         self.identifier = ext.domain
-        self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
+        # self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
         self.email_address = f'cookiehunterproject+{self.identifier}@gmail.com'
         print(self.email_address)
@@ -55,20 +68,56 @@ class Browser:
                                   'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]',
                                   'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
-        self.cookie_accept_synonyms = [ 'Accept','accept','ACCEPT','bevestig', 'Bevestig', 'confirm', 'Confirm','Accepteer',
-                                  'accepteer','ACCEPTEER',  'keuze', 'choice', 'accept all cookies',
-                                        'Accept all cookies','Accept All Cookies', 'I Accept', "I Consent"]
+        self.cookie_accept_synonyms = [ 'accept','bevestig', 'confirm', 'accepteer','keuze', 'choice', 'accept all cookies',
+                                         'I accept', "I Consent"]
+        create_synonyms(self.cookie_accept_synonyms)
+
+        self.sign_up_synonyms = ['register','registration', 'sign up','signup','createuser', 'create user']
+        create_synonyms(self.sign_up_synonyms)
+
+        self.login_synonyms = ['login', 'log-in', 'log in']
+        create_synonyms(self.login_synonyms)
 
 
     def filter_elements(self, element_list):
         iterator = filter(lambda element: element.is_displayed(), set(element_list))
         return list(iterator)
 
+    def login(self):
+        self.browser.get((self.login_url))
+        email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
+        for field in email:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.email_address)
+            else:
+                print("Field already filled by others")
+
+        username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
+        for field in username:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.username)
+            else:
+                print("Field already filled by others")
+
+        pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
+        for field in pwd:
+            if field.get_attribute("value") == "":
+                field.send_keys(self.pwd)
+            else:
+                print("Field already filled by others")
+
+        pwd.submit()
+
     def register(self):
-        self.browser.get((self.register_url))
+        if not self.register_url:
+            self.browser.get(self.home_url)
+        else:
+            self.browser.get(self.register_url)
         creds_for_register = {}
         if self.cookie_box_oracle():
             self.cookie_accept()
+        if not self.register_url:
+            self.navigate_to_register()
 
         # login_form = self.browser.find_element_by_xpath("//form[1]")
         checks = self.browser.find_elements(By.XPATH, "//input[@type='checkbox']")
@@ -115,11 +164,6 @@ class Browser:
 
     def submit_registration(self, el, creds_for_register):
         el.submit()
-        # button = self.browser.find_element(By.XPATH, "//button[@type='submit']")
-        # button.click()
-        # name.submit()
-        # button = browser.findElement(By.xpath("//button[text()='Sign up']")).click();
-        # button.click()
 
         msgId, link = self.verifyEmail()
         if msgId:
@@ -156,6 +200,7 @@ class Browser:
         self.db.update_web_page(self.identifier, data)
 
 
+
     def cookie_box_oracle(self):
         '''
         Function to check for a cookie box, which asks for consent
@@ -184,32 +229,61 @@ class Browser:
                 pass
 
 
+    def navigate_to_register(self):
+        url = self.get_sitemap(self.sign_up_synonyms)
+        if len(url)>0:
+            self.register_url = url[0]
+            self.browser.get((self.register_url))
 
-    def login(self):
-        self.browser.get((self.login_url))
+    def identify_form(self):
+        pwd_fields = self.generic_input_element_finder(self.password_synonyms)
+        if len(pwd_fields) > 1:
+            return 'register'
+        name = self.generic_element_finder("//input[@type='name']", self.name_synonyms)
+        if len(name) >0:
+            return 'register'
+        if len(pwd_fields) == 1:
+            return 'login'
+        return 'contact'
 
-        email = self.generic_element_finder("//input[@type='email']", self.email_synonyms)
-        for field in email:
-            if field.get_attribute("value") == "":
-                field.send_keys(self.email_address)
-            else:
-                print("Field already filled by others")
+    def get_sitemap(self, keywords):
+        depth = 2
+        limit = 50
 
-        username = self.generic_element_finder("//input[@type='username']", self.username_synonyms)
-        for field in username:
-            if field.get_attribute("value") == "":
-                field.send_keys(self.username)
-            else:
-                print("Field already filled by others")
+        queue = [(self.home_url, 0)]
+        found = []
 
-        pwd = self.generic_element_finder("//input[@type='password']", self.password_synonyms)
-        for field in pwd:
-            if field.get_attribute("value") == "":
-                field.send_keys(self.pwd)
-            else:
-                print("Field already filled by others")
+        base = urlparse.urlparse(self.home_url).netloc
+        handled = []
 
-        pwd.submit()
+        while queue:
+            page = queue.pop(0)
+            self.browser.get(page[0])
+            handled.append(page)
+            soup = BS(self.browser.page_source, 'html.parser')
+
+            for link in soup.select('body a')[:limit]:
+                full_link = urlparse.urljoin(self.home_url, link.get('href'))
+                parsed_link = urlparse.urlparse(full_link)
+                path = parsed_link.path.split('/')
+                elem = path[1] if len(path) >= 2 else ''
+                if elem == 'signup':
+                    print(elem)
+                # create clean link without queries, parameters or fragments
+                clean_link = f'{parsed_link.scheme}://{parsed_link.netloc}{parsed_link.path}'
+
+                if elem in keywords \
+                        and clean_link not in found:
+                    found.append(clean_link)
+
+                if page[1] < depth\
+                        and clean_link not in handled \
+                        and clean_link not in found\
+                        and elem in self.login_synonyms:
+                    queue.append((clean_link, page[1] + 1))
+                    queue = sorted(queue, key=lambda x: x[1])
+
+        return found
 
     def login_oracle(self):
         logged_in = self.name in self.browser.page_source
@@ -242,6 +316,25 @@ class Browser:
                 element_list = element_list + element
 
         return self.filter_elements(element_list)
+
+
+    def generic_input_element_finder(self, text_list):
+        '''
+        This function returns generic input elements.
+        !! This will not work for input values for "name" since it will also match username input type
+        :param text_list:
+        :return: input element
+        '''
+        element_set = set()
+        attr = ['@id', '@name', '@placeholder']
+        for syn in text_list:
+            for a in attr:
+                if ' ' in syn:
+                    continue
+                elements = self.browser.find_elements_by_xpath(f'//input[contains({a}, {syn})]')
+                for element in elements:
+                    element_set.add(element)
+        return self.filter_elements(list(element_set))
 
     def generic_buttons(self, text_list):
         button_set = set()
@@ -280,3 +373,6 @@ class Browser:
 
     def close(self):
         self.browser.quit()
+
+
+
