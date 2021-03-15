@@ -140,8 +140,13 @@ class Browser:
         # Comment this out to submit registration:
         # self.submit_registration(name, creds_for_register)
 
-    def submit_registration(self, el, creds_for_register):
-        el.submit()
+    def submit_registration(self, creds_for_register):
+        for web_element, field in self.attribute_assignments.items():
+            try:
+                web_element.submit()
+                break
+            except Exception as e:
+                print(e)
 
         msgId, link = self.verifyEmail()
         if msgId:
@@ -160,6 +165,7 @@ class Browser:
                                creds_for_register=creds_for_register)
         else:
             print('Login unsuccessful for ' + self.home_url)
+
 
     def verifyEmail(self, max_tries=6) -> Tuple[Optional[str], Optional[str]]:
         tries = 1
@@ -287,8 +293,6 @@ class Browser:
                 parsed_link = urlparse.urlparse(full_link)
                 path = parsed_link.path.split('/')
                 elem = path[1] if len(path) >= 2 else ''
-                if elem == 'signup':
-                    print(elem)
                 # create clean link without queries, parameters or fragments
                 clean_link = f'{parsed_link.scheme}://{parsed_link.netloc}{parsed_link.path}'
 
@@ -308,6 +312,9 @@ class Browser:
     def login_oracle(self):
         logged_in = self.credentials["name"] in self.browser.page_source
         return logged_in
+
+    def registration_oracle(self):
+        pass
 
     def refresh(self):
         self.browser.refresh()
