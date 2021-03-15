@@ -7,12 +7,15 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.chrome.options import Options
 
 from time import sleep
-from CookieHunter.src.DatabaseManager import DatabaseManager
-from CookieHunter.src.EmailVerifier import EmailVerifier
-from CookieHunter.src.Helper import *
+from src.DatabaseManager import DatabaseManager
+from src.EmailVerifier import EmailVerifier
+from src.Helper import *
 import tldextract
 import urllib.parse as urlparse
 from bs4 import BeautifulSoup as BS
+
+from src.Helper import create_synonyms
+
 
 class Browser:
 
@@ -46,7 +49,7 @@ class Browser:
         self.credentials["username"] = "CookieHunter007"
         self.synonyms = {}
         self.synonyms["email"] = ['user_email', 'email', 'e_mail', 'useremail', 'userEmail', 'mail', 'uemail',
-                                  'User_email', 'Email', 'E_mail', 'Useremail', 'UserEmail', 'Mail', 'Uemail',
+                                  'User_email', 'E_mail' , 'UserEmail', 'Mail', 'Uemail',
                                   'User_email_address', 'Email_address', 'email_address', 'emailadress',
                                   'UserEmailAddress', 'Email address', 'Email Address', 'EMAIL',
                                   'MailAdress'
@@ -69,12 +72,14 @@ class Browser:
                               'nc_lastname', 'nc_lastname_required'
 
                               ]
-        self.username_synonyms = ['username', 'uname', 'user_id', 'user_name', 'uName', 'u_Name', 'UserName',
+        self.synonyms["username"] = ['username', 'uname', 'user_id', 'user_name', 'uName', 'u_Name', 'UserName',
                                   'user_name_new', 'new_username', 'user_username', 'user_username', 'user[username]',
                                   'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
         self.cookie_accept_synonyms = [ 'accept','bevestig', 'confirm', 'accepteer','keuze', 'choice', 'accept all cookies',
                                          'I accept', "I Consent"]
+        self.label_assignments = {}
+        self.attribute_assignments = {}
         create_synonyms(self.cookie_accept_synonyms)
 
         self.sign_up_synonyms = ['register','registration', 'sign up','signup','createuser', 'create user']
@@ -100,7 +105,7 @@ class Browser:
             self.navigate_to_register()
 
         checks = self.browser.find_elements(By.XPATH, "//input[@type='checkbox']")
-        for check in checks:
+        for check in self.filter_elements(checks):
             check.click()
 
         # label and input field searching done here
@@ -208,10 +213,10 @@ class Browser:
             self.browser.get((self.register_url))
 
     def identify_form(self):
-        pwd_fields = self.generic_input_element_finder(self.password_synonyms)
+        pwd_fields = self.generic_input_element_finder(self.synonyms["password"])
         if len(pwd_fields) > 1:
             return 'register'
-        name = self.generic_element_finder("//input[@type='name']", self.name_synonyms)
+        name = self.generic_element_finder("//input[@type='name']", self.synonyms["name"], "name")
         if len(name) >0:
             return 'register'
         if len(pwd_fields) == 1:
@@ -280,7 +285,7 @@ class Browser:
         return found
 
     def login_oracle(self):
-        logged_in = self.name in self.browser.page_source
+        logged_in = self.credentials["name"] in self.browser.page_source
         return logged_in
 
     def refresh(self):
@@ -320,6 +325,7 @@ class Browser:
         # After finding the elements and filtering for duplicates and hidden elements, we put them in the attribute_assignments dictionary with the value being the type of credentials we are filling
         for web_element in element_list:
             self.attribute_assignments[web_element] = type_string
+        return element_list
 
     def label_finder(self, text_list, type_string):
         '''
