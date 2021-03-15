@@ -8,7 +8,7 @@ class DatabaseManager:
         if not firebase_admin._apps:
             cred = credentials.Certificate("./../data/database_cred.json")
             firebase_admin.initialize_app(cred)
-            self.db = firestore.client()
+        self.db = firestore.client()
 
     def add_new_webpage(self, ref, data):
         doc_ref = self.db.collection('pages').document(ref)
@@ -19,7 +19,7 @@ class DatabaseManager:
 
     def get_webpage(self, ref):
         if self.db.collection('pages').document(ref).get().exists:
-            return self.db.collection('pages').document(ref).get()
+            return self.db.collection('pages').document(ref).get().to_dict()
         else:
             return None
 
