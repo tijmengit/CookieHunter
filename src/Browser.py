@@ -30,14 +30,14 @@ class Browser:
         self.browser_options.add_experimental_option("prefs", self.prefs)
         self.browser = webdriver.Chrome(driver_path, options=self.browser_options)
         self.browser.set_page_load_timeout(10)
-        # self.db = DatabaseManager()
+        self.db = DatabaseManager()
         self.emailVerifier = EmailVerifier()
         self.home_url = home_url
         self.login_url = login_url
         self.register_url = register_url
         ext = tldextract.extract(home_url)
         self.identifier = ext.domain
-        # self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
+        self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
         self.email_address = f'cookiehunterproject+{self.identifier}@gmail.com'
         print(self.email_address)
@@ -99,17 +99,66 @@ class Browser:
             self.browser.get(self.home_url)
         else:
             self.browser.get(self.register_url)
-        creds_for_register = {}
 
         if self.cookie_box_oracle():
             self.cookie_accept()
         if not self.register_url:
-            self.navigate_to_register()
+            if self.navigate_to_register():
+                print('Registration url found')
+            elif self.identify_form() == 'register':
+                print('Registration form on homepage')
+            else:
+                print('No registration url found')
+                return
 
         checks = self.browser.find_elements(By.XPATH, "//input[@type='checkbox']")
         for check in self.filter_elements(checks):
             check.click()
 
+        creds_for_register = self.fill_attributes()
+
+        # for the elements that were not matched by the labels, we fill based on their html attributes
+        submitted = False
+        for web_element, field in self.attribute_assignments.items():
+            if web_element.get_attribute("value") == "":
+                submitted = True
+                web_element.send_keys(self.credentials[field])
+                creds_for_register[field] = self.credentials[field]
+
+        # Comment this out to submit registration:
+        if submitted:
+            print("At least one input field has been filled")
+            self.submit_registration(creds_for_register)
+        else:
+            print("No submission done")
+
+    def login(self, accept_cookie):
+
+        if not self.login_url:
+            self.browser.get(self.home_url)
+        else:
+            self.browser.get(self.login_url)
+
+        if accept_cookie and self.cookie_box_oracle():
+            self.cookie_accept()
+
+        if not self.login_url:
+            self.navigate_to_login()
+
+        if self.cookie_box_oracle():
+            self.cookie_accept()
+
+        self.fill_attributes()
+
+        for web_element, field in self.attribute_assignments.items():
+            if web_element.get_attribute("value") == "":
+                web_element.send_keys(self.credentials[field])
+
+        print("form filling complete")
+
+    def fill_attributes(self):
+        creds_for_register = {}
+        self.attribute_assignments = {}
         # label and input field searching done here
         for field in self.fields:
             self.label_finder(self.synonyms[field], field)
@@ -128,28 +177,19 @@ class Browser:
                             self.attribute_assignments[input_element] = field
                             input_element.send_keys(self.credentials[field])
                             creds_for_register[field] = self.credentials[field]
-
-        # for the elements that were not matched by the labels, we fill based on their html attributes
-        for web_element, field in self.attribute_assignments.items():
-            if web_element.get_attribute("value") == "":
-                web_element.send_keys(self.credentials[field])
-                creds_for_register[field] = self.credentials[field]
-
-        sleep(10)
-
-        # Comment this out to submit registration:
-        # self.submit_registration(name, creds_for_register)
+        return creds_for_register
 
     def submit_registration(self, creds_for_register):
         for web_element, field in self.attribute_assignments.items():
             try:
                 web_element.submit()
+                print('Form submitted')
                 break
             except Exception as e:
                 print(e)
 
-        msgId, link = self.verifyEmail()
         email_received = False
+        msgId, link = self.verifyEmail()
         if msgId:
             print("Verification mail received")
             email_received = True
@@ -220,6 +260,9 @@ class Browser:
         if len(url)>0:
             self.register_url = url[0]
             self.browser.get((self.register_url))
+            return True
+        else:
+            return False
 
     def navigate_to_login(self):
         url = self.get_sitemap(self.synonyms['login'])
@@ -228,48 +271,26 @@ class Browser:
             self.browser.get((self.login_url))
 
     def identify_form(self):
-        pwd_fields = self.generic_input_element_finder(self.synonyms["password"])
-        if len(pwd_fields) > 1:
-            return 'register'
-        name = self.generic_element_finder("//input[@type='name']", self.synonyms["name"], "name")
-        if len(name) >0:
-            return 'register'
-        if len(pwd_fields) == 1:
-            return 'login'
-        return 'contact'
-
-    def login(self, accept_cookie):
-
-        if not self.login_url:
-            self.browser.get(self.home_url)
-        else:
-            self.browser.get(self.login_url)
-
-        if accept_cookie and self.cookie_box_oracle():
-            self.cookie_accept()
-
-        if not self.login_url:
-            self.navigate_to_login()
-
-        if self.cookie_box_oracle():
-            self.cookie_accept()
-        for field in self.fields:
-            self.label_finder(self.synonyms[field], field)
-            self.generic_element_finder("//input[@type='{plc}']".format(plc=field), self.synonyms[field], field)
-        for web_element, field in self.label_assignments.items():
-            id_value = web_element.get_attribute("for")
-            if id_value is not None:
-                for input_element in self.attribute_assignments.keys():
-                    if input_element.get_attribute("value") == "":
-                        id_from_element = input_element.get_attribute("id")
-                        if id_from_element is not None and id_value in id_from_element:
-                            self.attribute_assignments[input_element] = field
-                            input_element.send_keys(self.credentials[field])
+        pwd_fields = 0
+        name_fields = 0
+        input_fields = 0
         for web_element, field in self.attribute_assignments.items():
             if web_element.get_attribute("value") == "":
-                web_element.send_keys(self.credentials[field])
+                input_fields += 1
+                if field == 'password':
+                    pwd_fields += 1
+                elif field == 'name':
+                    name_fields += 1
+        if pwd_fields > 1:
+            return 'register'
+        if name_fields >0:
+            return 'register'
+        if pwd_fields == 1:
+            return 'login'
+        if input_fields ==0:
+            return 'no form'
+        return 'unknown'
 
-        print("form filling complete")
 
 
     def get_sitemap(self, keywords):
@@ -320,19 +341,18 @@ class Browser:
         3. attempt to login
         '''
         # 1. visit registration url and check for input fields used to register
-        self.browser.get(self.register_url)
-        for web_element, field in self.attribute_assignments.items():
-            if web_element.get_attribute("value") == "":
-                try:
-                    web_element.send_keys(self.credentials[field])
-                    print('Login successful for ' + self.home_url)
-                    return True
-                except Exception as e:
-                    continue
+        try:
+            self.browser.get(self.register_url)
+        except Exception as e:
+            pass
+
+        self.fill_attributes()
+        if self.identify_form() == 'no form':
+            return True
 
         # 2. check for creds on homepage
         self.browser.get(self.home_url)
-        for cred in creds_for_register:
+        for cred in creds_for_register.values():
             if cred in self.browser.page_source:
                 print('Login successful for ' + self.home_url)
                 return True
@@ -342,7 +362,7 @@ class Browser:
         if self.login_oracle():
             print('Login successful for ' + self.home_url)
             return True
-        print('Login unsuccessful for ' + self.home_url)
+        print('Registration possibly unsuccessful for ' + self.home_url)
         return False
 
     def refresh(self):
