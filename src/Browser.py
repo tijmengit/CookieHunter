@@ -323,7 +323,7 @@ class Browser:
                 if value in self.browser.page_source:
                     logged_in = True
 
-        print("LOGGED IN: ", logged_in)
+        print("Login Oracle - Logged in: ", logged_in)
         return logged_in
 
     def login_oracle_help(self, website):
