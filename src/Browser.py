@@ -246,7 +246,7 @@ class Browser:
                 web_element.send_keys(self.credentials[field])
 
         print("form filling complete")
-        
+
         '''
         print("form filling complete")
         pwd = self.generic_element_finder("//input[@type='password']", self.synonyms["password"], "password")
@@ -294,6 +294,16 @@ class Browser:
         return found
 
     def login_oracle(self):
+        '''
+        Step 1: Refetch page and check whether submitted form is still there
+        If False: We are logged in
+        Else: (Follow)
+        Step 2: Check if Account Identifiers are present + Logout Button
+        If True: We are logged in
+        Else: We are not logged in
+        Step 3: Check false positves
+        [send HTTP request without any cookies and consult login oracle once again]
+        '''
         logged_in = False
         second_step = False
         self.browser.get((self.login_url))
@@ -301,11 +311,9 @@ class Browser:
         for field in self.fields:
             elements = self.generic_element_finder("//input[@type='{plc}']".format(plc=field), self.synonyms[field], field)
             if not elements:
-                print("field: ", field)
-                print("TRUE")
                 logged_in = True
             else:
-                logged_in = False
+                logged_in = False       #if one element is not empty --> go to step 2
                 second_step = True
                 break
 
@@ -315,7 +323,7 @@ class Browser:
                 if value in self.browser.page_source:
                     logged_in = True
 
-        print("LOGGED IN: ", logged_in)
+        
         return logged_in
 
     def login_oracle_help(self, website):
