@@ -156,6 +156,15 @@ class Browser:
 
         print("form filling complete")
 
+        '''
+        print("form filling complete")
+        pwd = self.generic_element_finder("//input[@type='password']", self.synonyms["password"], "password")
+        for p in pwd:
+            p.submit()
+        '''
+
+        # pwd.submit()
+
     def fill_attributes(self):
         creds_for_register = {}
         self.attribute_assignments = {}
@@ -291,8 +300,6 @@ class Browser:
             return 'no form'
         return 'unknown'
 
-
-
     def get_sitemap(self, keywords):
         depth = 2
         limit = 50
@@ -330,8 +337,42 @@ class Browser:
         return found
 
     def login_oracle(self):
-        logged_in = self.credentials["name"] in self.browser.page_source
+        '''
+        Step 1: Refetch page and check whether submitted form is still there
+        If False: We are logged in
+        Else: (Follow)
+        Step 2: Check if Account Identifiers are present + Logout Button
+        If True: We are logged in
+        Else: We are not logged in
+        Step 3: Check false positves
+        [send HTTP request without any cookies and consult login oracle once again]
+        '''
+        logged_in = False
+        second_step = False
+        self.browser.get((self.login_url))
+
+        for field in self.fields:
+            elements = self.generic_element_finder("//input[@type='{plc}']".format(plc=field), self.synonyms[field], field)
+            if not elements:
+                logged_in = True
+            else:
+                logged_in = False       #if one element is not empty --> go to step 2
+                second_step = True
+                break
+
+        if second_step:
+            self.browser.get(self.home_url)
+            for value in self.credentials.values():
+                if value in self.browser.page_source:
+                    logged_in = True
+
+        print("Login Oracle - Logged in: ", logged_in)
         return logged_in
+
+
+    def login_oracle_help(self, website):
+        self.browser.execute_script(f'''window.open("{website}","_blank");''')
+        self.browser.switch_to.window(self.browser.window_handles[1])
 
     def registration_oracle(self, creds_for_register):
         '''
@@ -364,6 +405,7 @@ class Browser:
             return True
         print('Registration possibly unsuccessful for ' + self.home_url)
         return False
+
 
     def refresh(self):
         self.browser.refresh()
