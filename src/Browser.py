@@ -54,13 +54,15 @@ class Browser:
                                   'User_email', 'E_mail' , 'UserEmail', 'Mail', 'Uemail',
                                   'User_email_address', 'Email_address', 'email_address', 'emailadress',
                                   'UserEmailAddress', 'Email address', 'Email Address', 'EMAIL',
-                                  'MailAdress'
+                                  'MailAdress', 'User Email', 'E-mail Address', 'e-mail address', 'Email address',
+                                  'User Email Address', 'User email address'
                                   ]
         self.synonyms["password"] = ['user_password', 'password', 'pword', 'userpassword', 'userpwd', 'pwd', 'PWD',
                                      'u_password', 'passw', 'p_word', 'UserPassword', 'UserPwd', 'Pwd', 'pass',
                                      'Password',
                                      'User Password', 'Passwd', 'ConfirmPasswd', 'Confirm Password', 'Confirm password',
-                                     'onfirm Password', 'confirm password', 'CnfrmPsswrd', 'ConfirmPwd', 'CnfrmPwd'
+                                     'onfirm Password', 'confirm password', 'CnfrmPsswrd', 'ConfirmPwd', 'CnfrmPwd',
+                                     'Re-enter Password', 'Password Confirm'
                                      ]
         self.synonyms["name"] = ['name_first', 'name', 'first_name', 'firstname', 'First_Name', 'f_name', 'firstName',
                                  'User_efirstname', 'First_name', 'first_Name', 'NAME', 'F_NAME', 'FName',
@@ -467,9 +469,15 @@ class Browser:
         '''
         element_list = []
         label_xpath = "//label[contains(text(),'{el}')]"
+        label_span_xpath = "//label/descendant::span[contains(text(),'{el}')]"
         for text in text_list:
             element = self.browser.find_elements(By.XPATH, label_xpath.format(el=text))
             element_list = element_list + element
+            inner_span = self.browser.find_elements(By.XPATH, label_span_xpath.format(el=text))
+            for span_element in inner_span:
+                element = span_element.find_elements(By.XPATH, ("./.."))
+                element_list = element_list + element
+
         element_list = self.filter_elements(element_list)
         # After finding the labels and filtering for duplicates and hidden elements, we put them in the label_assignments dictionary with the value being the type of credentials we are filling
         # We also add their for attribute into the keyword list so that the generic_element_finder can find the input field to fill
