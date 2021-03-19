@@ -23,7 +23,9 @@ class Browser:
         self.browser_options = Options()
         self.prefs = {
             "profile.default_content_setting_values.notifications": 2,
+            "profile.managed_default_content_settings.images": 2,
             "profile.managed_default_content_settings.popups": 2,
+            "profile.managed_default_content_settings.stylesheets": 2,
             "translate_whitelists": language_whitelist(),
             "translate": {"enabled": "true"}
         }
@@ -118,28 +120,29 @@ class Browser:
         creds_for_register = self.fill_attributes()
 
         # for the elements that were not matched by the labels, we fill based on their html attributes
-        submitted = False
-        for web_element, field in self.attribute_assignments.items():
-            if web_element.get_attribute("value") == "":
-                submitted = True
-                web_element.send_keys(self.credentials[field])
-                creds_for_register[field] = self.credentials[field]
+        # submitted = False
+        # for web_element, field in self.attribute_assignments.items():
+        #     if web_element.get_attribute("value") == "":
+        #         submitted = True
+        #         web_element.send_keys(self.credentials[field])
+        #         creds_for_register[field] = self.credentials[field]
 
         # Comment this out to submit registration:
-        if submitted:
+        if len(creds_for_register) > 0:
             print("At least one input field has been filled")
-            self.submit_registration(creds_for_register)
+            return self.submit_registration(creds_for_register)
         else:
             print("No submission done")
+            return False
 
-    def login(self, accept_cookie):
+    def login(self):
 
         if not self.login_url:
             self.browser.get(self.home_url)
         else:
             self.browser.get(self.login_url)
 
-        if accept_cookie and self.cookie_box_oracle():
+        if self.cookie_box_oracle():
             self.cookie_accept()
 
         if not self.login_url:
@@ -148,26 +151,26 @@ class Browser:
         if self.cookie_box_oracle():
             self.cookie_accept()
 
-        self.fill_attributes()
-
-        for web_element, field in self.attribute_assignments.items():
-            if web_element.get_attribute("value") == "":
-                web_element.send_keys(self.credentials[field])
-
+        creds_for_login = self.fill_attributes()
         print("form filling complete")
+        if len(creds_for_login) > 0:
+            for web_element, field in self.attribute_assignments.items():
+                try:
+                    web_element.submit()
+                    print('Form submitted')
+                    break
+                except Exception as e:
+                    print(e)
 
-        '''
-        print("form filling complete")
-        pwd = self.generic_element_finder("//input[@type='password']", self.synonyms["password"], "password")
-        for p in pwd:
-            p.submit()
-        '''
 
-        # pwd.submit()
+
+
+
 
     def fill_attributes(self):
         creds_for_register = {}
         self.attribute_assignments = {}
+        self.label_assignments = {}
         # label and input field searching done here
         for field in self.fields:
             self.label_finder(self.synonyms[field], field)
@@ -186,6 +189,12 @@ class Browser:
                             self.attribute_assignments[input_element] = field
                             input_element.send_keys(self.credentials[field])
                             creds_for_register[field] = self.credentials[field]
+
+        for web_element, field in self.attribute_assignments.items():
+            if web_element.get_attribute("value") == "":
+                web_element.send_keys(self.credentials[field])
+                creds_for_register[field] = self.credentials[field]
+
         return creds_for_register
 
     def submit_registration(self, creds_for_register):
@@ -212,6 +221,9 @@ class Browser:
             print(f'registration successful, adding {self.home_url} to database')
             self.fill_database(able_to_fill_register=True, able_to_fill_login=True, registered=True, captcha=False,
                                creds_for_register=creds_for_register)
+            return True
+        else:
+            return False
 
 
 
@@ -399,7 +411,7 @@ class Browser:
                 return True
 
         # 3. attempt login
-        self.login(accept_cookie=False)
+        self.login()
         if self.login_oracle():
             print('Login successful for ' + self.home_url)
             return True

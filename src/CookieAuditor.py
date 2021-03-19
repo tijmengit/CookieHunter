@@ -134,7 +134,7 @@ class CookieAuditor:
                                 elif removed_elem not in t_filter:
                                     t_filter.append(removed_elem)
             level += 1
-        return([( [cookie_list[elem] for elem in comb]) for comb in end_result])
+        return [( [cookie_list[elem] for elem in comb]) for comb in end_result]
 
     def check_cookie_set(self, cookie_set=[]):
         self.browser.delete_cookies()
