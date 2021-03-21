@@ -117,17 +117,17 @@ class PrivacyAuditor:
             for d in decoded:
                 if info in d:
                     leaks.add(info_type)
-                    continue
+                    break
 
             for name, value in local.items():
                 if info == name or info == value:
                     leaks.add(info_type)
-                    continue
+                    break
 
             for name, value in session.items():
                 if info == name or info == value:
                     leaks.add(info_type)
-                    continue
+                    break
 
         return leaks
 
@@ -144,12 +144,12 @@ class PrivacyAuditor:
             for d in decoded:
                 if info in d:
                     leaks.add(info_type)
-                    continue
+                    break
 
             for cookie in cookies:
                 if info in cookie['name'] or info in cookie['value']:
                     leaks.add(info_type)
-                    continue
+                    break
         return leaks
 
     def find_page_leaks(self, browser: WebDriver, pages: List[str]) -> Set[str]:
@@ -168,7 +168,7 @@ class PrivacyAuditor:
                 for d in decoded:
                     if info in d:
                         leaks.add(info_type)
-                        continue
+                        break
 
         return leaks
 
