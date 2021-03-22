@@ -38,14 +38,12 @@ class Browser:
         self.login_url = login_url
         self.register_url = register_url
         ext = tldextract.extract(home_url)
-        self.identifier = ext.domain
+        self.identifier = ext.domain+"1"
         self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
-        self.email_address = f'cookiehunterproject+{self.identifier}@gmail.com'
-        print(self.email_address)
         self.fields = ["email", "password", "name", "username"]
         self.credentials = {}
-        self.credentials["email"] = self.email_address
+        self.credentials["email"] = f'cookiehunterproject+{self.identifier}@gmail.com'
         self.credentials["password"] = "passwordRandom123!"
         self.credentials["name"] = "Janssen"
         self.credentials["username"] = "CookieHunter007"
@@ -100,12 +98,14 @@ class Browser:
 
     def register(self):
         if not self.register_url:
+            url = self.home_url
             self.browser.get(self.home_url)
         else:
+            url = self.register_url
             self.browser.get(self.register_url)
 
         if self.cookie_box_oracle():
-            self.cookie_accept()
+            self.cookie_accept(url)
         if not self.register_url:
             if self.navigate_to_register():
                 print('Registration url found')
@@ -140,18 +140,17 @@ class Browser:
     def login(self):
 
         if not self.login_url:
+            url = self.home_url
             self.browser.get(self.home_url)
         else:
+            url = self.login_url
             self.browser.get(self.login_url)
 
         if self.cookie_box_oracle():
-            self.cookie_accept()
+            self.cookie_accept(url)
 
         if not self.login_url:
             self.navigate_to_login()
-
-        if self.cookie_box_oracle():
-            self.cookie_accept()
 
         creds_for_login = self.fill_attributes()
         print("form filling complete")
@@ -228,7 +227,6 @@ class Browser:
             return False
 
 
-
     def verifyEmail(self, max_tries=6) -> Tuple[Optional[str], Optional[str]]:
         tries = 1
         while tries <= max_tries:
@@ -268,12 +266,12 @@ class Browser:
                 print(e)
         return False
 
-    def cookie_accept(self):
+    def cookie_accept(self, url):
         accept_button_options = self.generic_buttons(self.synonyms['cookie-accept'])
         for b in accept_button_options:
             try:
                 b.click()
-                self.browser.get((self.home_url))
+                self.browser.get(url)
                 return
             except Exception as e:
                 pass
