@@ -1,10 +1,10 @@
 [ {
-    "home_url": "",
+    "home_url": "https://www.namecheap.com/",
     "login_url": "https://www.namecheap.com/myaccount/login/",
     "register_url": "https://www.namecheap.com/myaccount/signup/"
   },
   {
-  "home_url": "",
+  "home_url": "https://create.piktochart.com/",
   "login_url": "https://create.piktochart.com/",
   "register_url": "https://create.piktochart.com/users/sign_up",
   "captcha": "True"
@@ -13,39 +13,34 @@
   "login_url": "https://hypothes.is/login",
   "register_url": "https://hypothes.is/signup"
 },{
-  "home_url": "",
-  "login_url": "",
+  "home_url": "https://issuu.com/",
+  "login_url": "https://issuu.com/signin",
   "register_url": "https://issuu.com/signup"
 },
   {
-  "home_url": "",
-  "login_url": "",
+  "home_url": "https://www.mentimeter.com/",
+  "login_url": "https://www.mentimeter.com/login",
   "register_url": "https://www.mentimeter.com/signup"
 },
   {
-    "home_url": "",
+    "home_url": "https://www.goodreads.com",
     "login_url": "https://www.goodreads.com/user/sign_in",
   "register_url": "https://www.goodreads.com/user/sign_up"
   },
     {
-    "home_url": "",
-    "login_url": "",
+    "home_url": "https://www.overleaf.com/",
+    "login_url": "https://www.overleaf.com/login",
   "register_url": "https://www.overleaf.com/register"
   },
       {
     "home_url": "tweakers.net",
-    "login_url": "",
+    "login_url": "https://tweakers.net/my.tnet/login/",
   "register_url": "https://tweakers.net/my.tnet/register/"
   },
   {
     "home_url": "",
     "login_url": "",
   "register_url": "https://en.wikipedia.org/w/index.php?title=Special:CreateAccount&returnto=Main+Page"
-  },
-  {
-    "home_url": "",
-    "login_url": "",
-  "register_url": ""
   }
 ]
 
