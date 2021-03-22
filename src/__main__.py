@@ -2,7 +2,7 @@ import traceback
 from Browser import *
 from CookieAuditor import *
 from PrivacyAuditor import *
-
+import json
 
 def fullFlow(pages):
     PATH = os.getenv(
@@ -19,7 +19,12 @@ def fullFlow(pages):
                 raise Exception(f'Could not fetch document for: {ref}')
 
             # REGISTER
-            if not document['registered']:
+            register_in_db = False
+            try:
+                register_in_db = document['registered']
+            except Exception as e:
+                pass
+            if not register_in_db:
                 registered = browser.register()
                 if not registered:
                     raise Exception(f'Could not register on page: {page}')
@@ -57,12 +62,14 @@ def fullFlow(pages):
 
 if __name__ == "__main__":
     # this needs to be replaced with a getter for all pages we want to inspect
-    pages = [
-        {
-            'home_url': 'https://www.goodreads.com',
-            'login_url': 'https://www.goodreads.com/user/sign_in',
-            'register_url': 'https://www.goodreads.com/user/sign_up'
-        }
-    ]
+    # pages = [
+    #     {
+    #         'home_url': 'https://www.goodreads.com',
+    #         'login_url': 'https://www.goodreads.com/user/sign_in',
+    #         'register_url': 'https://www.goodreads.com/user/sign_up'
+    #     }
+    # ]
+    with open('../data/sites.json') as file:
+        pages = json.load(file)
 
     fullFlow(pages)
