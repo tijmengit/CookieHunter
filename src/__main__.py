@@ -36,6 +36,7 @@ def fullFlow(pages):
             # COOKIE AUDIT
             cookie_auditor = CookieAuditor(browser)
             vulnerable = cookie_auditor.findVulnerableCookies()
+            browser.db.update_web_page(ref, {"vulnerable": vulnerable})
             vulnerable_cookies = []
             if vulnerable['secure'] or vulnerable['httpOnly']:
                 vulnerable_cookies = cookie_auditor.findAuthCookies()
