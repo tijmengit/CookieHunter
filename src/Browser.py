@@ -14,6 +14,7 @@ import tldextract
 import urllib.parse as urlparse
 from bs4 import BeautifulSoup as BS
 
+from selenium.webdriver.common.keys import Keys
 from src.Helper import create_synonyms
 
 
@@ -38,7 +39,7 @@ class Browser:
         self.login_url = login_url
         self.register_url = register_url
         ext = tldextract.extract(home_url)
-        self.identifier = ext.domain+"1"
+        self.identifier = ext.domain+"115"
         self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
         self.fields = ["email", "password", "name", "username"]
@@ -191,8 +192,10 @@ class Browser:
             try:
                 web_element.submit()
                 print('Form submitted')
+                web_element.send_keys(Keys.ENTER)
                 break
             except Exception as e:
+                print('FORM NOT SUBMITTED')
                 print(e)
 
         email_received = False
