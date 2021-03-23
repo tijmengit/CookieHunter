@@ -121,14 +121,6 @@ class Browser:
 
         creds_for_register = self.fill_attributes()
 
-        # for the elements that were not matched by the labels, we fill based on their html attributes
-        # submitted = False
-        # for web_element, field in self.attribute_assignments.items():
-        #     if web_element.get_attribute("value") == "":
-        #         submitted = True
-        #         web_element.send_keys(self.credentials[field])
-        #         creds_for_register[field] = self.credentials[field]
-
         # Comment this out to submit registration:
         if len(creds_for_register) > 0:
             print("At least one input field has been filled")
@@ -162,10 +154,6 @@ class Browser:
                     break
                 except Exception as e:
                     print(e)
-
-
-
-
 
 
     def fill_attributes(self):
@@ -208,7 +196,7 @@ class Browser:
                 print(e)
 
         email_received = False
-        msgId, link = self.verifyEmail()
+        msgId, link = self.verifyEmail(max_tries=3)
         if msgId:
             print("Verification mail received")
             email_received = True
@@ -296,7 +284,7 @@ class Browser:
         name_fields = 0
         input_fields = 0
         for web_element, field in self.attribute_assignments.items():
-            if web_element.get_attribute("value") == "":
+            if web_element.get_attribute("value") == "" or len(web_element.get_attribute("value"))>1:
                 input_fields += 1
                 if field == 'password':
                     pwd_fields += 1
