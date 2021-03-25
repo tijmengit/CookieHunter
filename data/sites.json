@@ -1,27 +1,4 @@
-[ {
-    "home_url": "https://www.namecheap.com/",
-    "login_url": "https://www.namecheap.com/myaccount/login/",
-    "register_url": "https://www.namecheap.com/myaccount/signup/"
-  },
-  {
-  "home_url": "https://create.piktochart.com/",
-  "login_url": "https://create.piktochart.com/",
-  "register_url": "https://create.piktochart.com/users/sign_up",
-  "captcha": "True"
-},{
-  "home_url": "https://web.hypothes.is/",
-  "login_url": "https://hypothes.is/login",
-  "register_url": "https://hypothes.is/signup"
-},{
-  "home_url": "https://issuu.com/",
-  "login_url": "https://issuu.com/signin",
-  "register_url": "https://issuu.com/signup"
-},
-  {
-  "home_url": "https://www.mentimeter.com/",
-  "login_url": "https://www.mentimeter.com/login",
-  "register_url": "https://www.mentimeter.com/signup"
-},
+[
   {
     "home_url": "https://www.goodreads.com",
     "login_url": "https://www.goodreads.com/user/sign_in",

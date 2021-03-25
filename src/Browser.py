@@ -130,6 +130,8 @@ class Browser:
             return False
 
     def login(self):
+        if self.login_oracle():
+            return
 
         if not self.login_url:
             url = self.home_url
@@ -143,6 +145,8 @@ class Browser:
 
         if not self.login_url:
             self.navigate_to_login()
+
+
 
         creds_for_login = self.fill_attributes()
         print("form filling complete")
@@ -404,6 +408,9 @@ class Browser:
             print('Login successful for ' + self.home_url)
             return True
         print('Registration possibly unsuccessful for ' + self.home_url)
+        if 'captcha' in self.browser.page_source:
+            self.fill_database(able_to_fill_register=True, able_to_fill_login=False, registered=False, captcha=True,
+                               creds_for_register=None)
         return False
 
 
