@@ -3,8 +3,10 @@ from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from time import sleep
+
+from selenium.webdriver.remote.webelement import WebElement
 from tldextract import extract
-from typing import Optional, Tuple
+from typing import Optional, Tuple, Dict, List, Union
 import urllib.parse as urlparse
 from src.DatabaseManager import DatabaseManager
 from src.EmailVerifier import EmailVerifier
@@ -71,7 +73,7 @@ class Browser:
             print("No submission done")
             return False
 
-    def registration_oracle(self, creds_for_register):
+    def registration_oracle(self, creds_for_register: Dict[str, str]) -> bool:
         """
         3 checks for registration oracle:
         1. visit registration url and check if input fields are still there
@@ -103,7 +105,7 @@ class Browser:
         print('Registration possibly unsuccessful for ' + self.home_url)
         return False
 
-    def login(self):
+    def login(self) -> None:
 
         if not self.login_url:
             url = self.home_url
@@ -129,7 +131,7 @@ class Browser:
                 except Exception as e:
                     print(e)
 
-    def login_oracle(self):
+    def login_oracle(self) -> bool:
         """
         Step 1: Refetch page and check whether submitted form is still there
         If False: We are logged in
@@ -145,8 +147,7 @@ class Browser:
         self.browser.get(self.login_url)
 
         for field in self.fields:
-            elements = self.__generic_element_finder("//input[@type='{plc}']".format(plc=field), self.synonyms[field],
-                                                     field)
+            elements = self.__generic_element_finder(f"//input[@type='{field}']", self.synonyms[field], field)
             if not elements:
                 logged_in = True
             else:
@@ -163,22 +164,22 @@ class Browser:
         print("Login Oracle - Logged in: ", logged_in)
         return logged_in
 
-    def __login_oracle_help(self, website):
+    def __login_oracle_help(self, website: str):
         self.browser.execute_script(f'''window.open("{website}","_blank");''')
         self.browser.switch_to.window(self.browser.window_handles[1])
 
-    def __filter_elements(self, element_list):
+    def __filter_elements(self, element_list: List[WebElement]) -> List[WebElement]:
         iterator = filter(lambda element: element.is_displayed(), set(element_list))
         return list(iterator)
 
-    def __fill_attributes(self) -> dict:
+    def __fill_attributes(self) -> Dict[str, str]:
         creds_for_register = {}
         self.attribute_assignments = {}
         self.label_assignments = {}
         # label and input field searching done here
         for field in self.fields:
             self.__label_finder(self.synonyms[field], field)
-            self.__generic_element_finder("//input[@type='{plc}']".format(plc=field), self.synonyms[field], field)
+            self.__generic_element_finder(f"//input[@type='{field}']", self.synonyms[field], field)
 
         # filling in the elements depending on their labels here, we iterate through labels and look for the input
         # fields to match with labels for attributes
@@ -202,7 +203,7 @@ class Browser:
 
         return creds_for_register
 
-    def __submit_registration(self, creds_for_register):
+    def __submit_registration(self, creds_for_register: Dict[str, str]) -> bool:
         for web_element, field in self.attribute_assignments.items():
             try:
                 web_element.submit()
@@ -230,7 +231,7 @@ class Browser:
         else:
             return False
 
-    def __verifyEmail(self, max_tries=6) -> Tuple[Optional[str], Optional[str]]:
+    def __verifyEmail(self, max_tries: int = 6) -> Tuple[Optional[str], Optional[str]]:
         tries = 1
         while tries <= max_tries:
             delay = 2 ** tries
@@ -241,12 +242,13 @@ class Browser:
             tries += 1
         return None, None
 
-    def __fill_database(self, able_to_fill_register, able_to_fill_login, registered, captcha, creds_for_register):
+    def __fill_database(self, able_to_fill_register: bool, able_to_fill_login: bool,
+                        registered: bool, captcha: bool, creds_for_register: Dict[str, str]) -> None:
         data = {'register_data': creds_for_register, 'able_to_fill_register': able_to_fill_register,
                 'able_to_fill_login': able_to_fill_login, 'registered': registered, 'captcha': captcha}
         self.db.update_web_page(self.identifier, data)
 
-    def __cookie_box_oracle(self):
+    def __cookie_box_oracle(self) -> bool:
         """
         Function to check for a cookie box, which asks for consent
         :return: Cookie box present
@@ -263,7 +265,7 @@ class Browser:
                 print(e)
         return False
 
-    def __cookie_accept(self, url):
+    def __cookie_accept(self, url: str) -> None:
         accept_button_options = self.__generic_buttons(self.synonyms['cookie-accept'])
         for b in accept_button_options:
             try:
@@ -273,7 +275,7 @@ class Browser:
             except Exception as e:
                 pass
 
-    def __navigate_to_register(self):
+    def __navigate_to_register(self) -> bool:
         url = self.__get_sitemap(self.synonyms['register'])
         if len(url) > 0:
             self.register_url = url[0]
@@ -282,13 +284,13 @@ class Browser:
         else:
             return False
 
-    def __navigate_to_login(self):
+    def __navigate_to_login(self) -> None:
         url = self.__get_sitemap(self.synonyms['login'])
         if len(url) > 0:
             self.login_url = url[0]
             self.browser.get(self.login_url)
 
-    def __identify_form(self):
+    def __identify_form(self) -> str:
         pwd_fields = 0
         name_fields = 0
         input_fields = 0
@@ -309,7 +311,7 @@ class Browser:
             return 'no form'
         return 'unknown'
 
-    def __get_sitemap(self, keywords):
+    def __get_sitemap(self, keywords: List[str]) -> List[str]:
         depth = 2
         limit = 50
 
@@ -343,7 +345,7 @@ class Browser:
 
         return found
 
-    def __generic_element_finder(self, x_path_text, text_list, type_string):
+    def __generic_element_finder(self, x_path_text: str, text_list: List[str], type_string: str) -> List[WebElement]:
         """
         Function that finds form elements that will be filled
         :param x_path_text: "//input[@type='{plc}']" finding inputs based on their types
@@ -356,6 +358,9 @@ class Browser:
         element_list = element_list + element
 
         for text in text_list:
+            if text not in self.browser.page_source:
+                continue
+
             element = self.browser.find_elements(By.NAME, text)
             element_list = element_list + element
 
@@ -365,11 +370,11 @@ class Browser:
             element = self.browser.find_elements(By.ID, text)
             element_list = element_list + element
 
-            placeholder = "//input[@placeholder=\"{plc}\"]".format(plc=text)
+            placeholder = f'//input[@placeholder="{text}"]'
             element = self.browser.find_elements(By.XPATH, placeholder)
             element_list = element_list + element
 
-            placeholder = "//input[@aria-label=\"{plc}\"]".format(plc=text)
+            placeholder = f'//input[@aria-label="{text}"]'
             element = self.browser.find_elements(By.XPATH, placeholder)
             element_list = element_list + element
 
@@ -380,7 +385,7 @@ class Browser:
             self.attribute_assignments[web_element] = type_string
         return element_list
 
-    def __label_finder(self, text_list, type_string):
+    def __label_finder(self, text_list: List[str], type_string: str) -> None:
         """
         Function that finds label elements
         :param text_list: manually curated keyword list
@@ -388,12 +393,10 @@ class Browser:
         :return: None
         """
         element_list = []
-        label_xpath = "//label[contains(text(),'{el}')]"
-        label_span_xpath = "//label/descendant::span[contains(text(),'{el}')]"
         for text in text_list:
-            element = self.browser.find_elements(By.XPATH, label_xpath.format(el=text))
+            element = self.browser.find_elements(By.XPATH, f"//label[contains(text(),'{text}')]")
             element_list = element_list + element
-            inner_span = self.browser.find_elements(By.XPATH, label_span_xpath.format(el=text))
+            inner_span = self.browser.find_elements(By.XPATH, f"//label/descendant::span[contains(text(),'{text}')]")
             for span_element in inner_span:
                 element = span_element.find_elements(By.XPATH, "./..")
                 element_list = element_list + element
@@ -408,7 +411,7 @@ class Browser:
             if id_value is not None and id_value is not "":
                 self.synonyms[type_string].append(id_value)
 
-    def __generic_input_element_finder(self, text_list):
+    def __generic_input_element_finder(self, text_list: List[str]) -> List[WebElement]:
         """
         This function returns generic input elements.
         !! This will not work for input values for "name" since it will also match username input type
@@ -426,7 +429,7 @@ class Browser:
                     element_set.add(element)
         return self.__filter_elements(list(element_set))
 
-    def __generic_buttons(self, text_list):
+    def __generic_buttons(self, text_list: List[str]) -> List[WebElement]:
         button_set = set()
         for syn in text_list:
             x_paths = ['//button[text()="' + syn + '"]']
@@ -436,13 +439,13 @@ class Browser:
                     button_set.add(b)
         return self.__filter_elements(list(button_set))
 
-    def get_cookies(self):
+    def get_cookies(self) -> Dict[str, str]:
         return self.browser.get_cookies()
 
-    def add_cookie(self, cookie):
+    def add_cookie(self, cookie: Dict[str, str]) -> None:
         self.browser.add_cookie(cookie)
 
-    def delete_cookies(self, cookies=None):
+    def delete_cookies(self, cookies: Optional[List[Union[str, Dict[str, str]]]] = None) -> None:
         if cookies is None:
             cookies = []
         if not cookies:
@@ -451,13 +454,13 @@ class Browser:
             for cookie in cookies:
                 self.delete_cookie(cookie)
 
-    def delete_cookie(self, cookie):
+    def delete_cookie(self, cookie: Union[str, Dict[str, str]]) -> None:
         if type(cookie) is dict:
             cookie = cookie['name']
         self.browser.delete_cookie(cookie)
 
-    def refresh(self):
+    def refresh(self) -> None:
         self.browser.refresh()
 
-    def close(self):
+    def close(self) -> None:
         self.browser.quit()

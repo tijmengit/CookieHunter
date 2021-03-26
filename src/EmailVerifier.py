@@ -2,7 +2,7 @@ import pickle
 import os.path
 import base64
 import re
-from typing import Tuple, Optional
+from typing import Tuple, Optional, List, Any
 
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
@@ -39,14 +39,13 @@ class EmailVerifier:
 
         self.service = build('gmail', 'v1', credentials=creds)
 
-    def getUnreadEmailLinks(self, identifier, max=10, days=1) -> Tuple[Optional[str], Optional[str]]:
+    def getUnreadEmailLinks(self, identifier: str, max: int = 10, days: int = 1) -> Tuple[Optional[str], Optional[str]]:
 
         # request a list of all the messages
         result = self.service.users().messages().list(userId='me', labelIds=['UNREAD', 'INBOX', 'CATEGORY_UPDATES'],
                                                       q=f'newer_than:{days}d', maxResults=max).execute()
         messages = result.get('messages')
         # iterate through all the messages
-        emailLinks = {}
         for msg in messages:
             # Get the message from its id
             txt = self.service.users().messages().get(userId='me', id=msg['id'], format="full").execute()
@@ -75,7 +74,7 @@ class EmailVerifier:
                 pass
         return None, None
 
-    def __getIdentifier(self, headers) -> Optional[str]:
+    def __getIdentifier(self, headers: List[Any]) -> Optional[str]:
         to_address = None
         for item in headers:
             if item['name'] == 'Delivered-To':
@@ -83,12 +82,11 @@ class EmailVerifier:
         identifier = re.findall('.*\+(.*)@.*', to_address)
         return identifier[0] if identifier else None
 
-    def messagesRead(self, msgIds) -> None:
+    def messagesRead(self, msgIds: List[str]) -> None:
         if msgIds:
             msg_labels = {'removeLabelIds': ['UNREAD'], 'addLabelIds': [], 'ids': msgIds}
             self.service.users().messages().batchModify(userId='me', body=msg_labels).execute()
 
-    def messageRead(self, msgId) -> None:
+    def messageRead(self, msgId: str) -> None:
         msg_labels = {'removeLabelIds': ['UNREAD'], 'addLabelIds': []}
         self.service.users().messages().modify(userId='me', id=msgId, body=msg_labels).execute()
-
