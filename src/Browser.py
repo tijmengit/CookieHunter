@@ -7,20 +7,21 @@ from selenium.webdriver.support import expected_conditions as ec
 from selenium.webdriver.chrome.options import Options
 
 from time import sleep
-from src.DatabaseManager import DatabaseManager
-from src.EmailVerifier import EmailVerifier
-from src.Helper import *
+from DatabaseManager import DatabaseManager
+from EmailVerifier import EmailVerifier
+from Helper import *
 import tldextract
 import urllib.parse as urlparse
 from bs4 import BeautifulSoup as BS
 
-from src.Helper import create_synonyms
+from Helper import create_synonyms
 
 
 class Browser:
 
     def __init__(self, home_url, login_url, register_url, driver_path):
         self.browser_options = Options()
+        # self.browser_options.add_argument('--headless')
         self.prefs = {
             "profile.default_content_setting_values.notifications": 2,
             "profile.managed_default_content_settings.images": 2,
@@ -38,7 +39,7 @@ class Browser:
         self.login_url = login_url
         self.register_url = register_url
         ext = tldextract.extract(home_url)
-        self.identifier = ext.domain+"1"
+        self.identifier = ext.domain+"104"
         self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
         self.fields = ["email", "password", "name", "username"]
@@ -46,7 +47,7 @@ class Browser:
         self.credentials["email"] = f'cookiehunterproject+{self.identifier}@gmail.com'
         self.credentials["password"] = "passwordRandom123!"
         self.credentials["name"] = "Janssen"
-        self.credentials["username"] = "CookieHunter007"
+        self.credentials["username"] = "CookieHunter000007"
         self.synonyms = {}
         self.synonyms["email"] = ['user_email', 'email', 'e_mail', 'useremail', 'userEmail', 'mail', 'uemail',
                                   'User_email', 'E_mail' , 'UserEmail', 'Mail', 'Uemail',
@@ -79,7 +80,7 @@ class Browser:
                                   'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                   ]
         self.synonyms['cookie-accept'] = [ 'accept', 'confirm', 'choice', 'accept all cookies',
-                                         'I accept', "I Consent", "allow all cookies"]
+                                         'I accept', "I Consent", "allow all cookies", "Accept All"]
 
         self.synonyms['register'] = ['register','registration', 'sign up','signup','createuser', 'create user']
 
@@ -108,11 +109,11 @@ class Browser:
             self.cookie_accept(url)
         if not self.register_url:
             if self.navigate_to_register():
-                print('Registration url found')
+                print('Registration url found for: ' + self.home_url)
             elif self.identify_form() == 'register':
                 print('Registration form on homepage')
             else:
-                print('No registration url found')
+                # print('No registration url found for: ' + self.home_url)
                 return
 
         checks = self.browser.find_elements(By.XPATH, "//input[@type='checkbox']")
@@ -191,6 +192,7 @@ class Browser:
         return creds_for_register
 
     def submit_registration(self, creds_for_register):
+        sleep(1)
         for web_element, field in self.attribute_assignments.items():
             try:
                 web_element.submit()
@@ -204,9 +206,9 @@ class Browser:
         if msgId:
             print("Verification mail received")
             email_received = True
+            self.browser.send_keys(Keys.COMMAND + 't')
             self.browser.get(link)
             sleep(3)
-            self.browser.close()
             self.db.update_web_page(self.identifier, {'verified': True})
             self.emailVerifier.messageRead(msgId)
 
