@@ -4,8 +4,8 @@ from CookieAuditor import *
 from PrivacyAuditor import *
 import json
 
-def fullFlow(page, PATH, privacy_auditor):
 
+def fullFlow(page, PATH, privacy_auditor):
     try:
         browser = Browser(page['home_url'], page['login_url'], page['register_url'], PATH)
         ref = browser.identifier
@@ -56,14 +56,6 @@ def fullFlow(page, PATH, privacy_auditor):
 
 
 if __name__ == "__main__":
-    # this needs to be replaced with a getter for all pages we want to inspect
-    # pages = [
-    #     {
-    #         'home_url': 'https://www.goodreads.com',
-    #         'login_url': 'https://www.goodreads.com/user/sign_in',
-    #         'register_url': 'https://www.goodreads.com/user/sign_up'
-    #     }
-    # ]
     with open('../data/sites.json') as file:
         pages = json.load(file)
     PATH = os.getenv(
