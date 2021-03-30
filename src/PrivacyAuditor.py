@@ -78,7 +78,7 @@ class PrivacyAuditor:
             'storage_leaks': list(storage_leaks),
         }
 
-    def inspect_urls(self, browser: WebDriver, urls: List[str]) -> Set[str]:
+    def inspect_urls(self, urls: List[str]) -> Set[str]:
         leaks = set()
         for url in urls:
             decoded = self.base64_finder(page_url)
@@ -247,7 +247,7 @@ class PrivacyAuditor:
         decoded = list(filter(None, [self.base64_decoder(match) for match in matches]))
         return decoded
 
-    def base64_decoder(self, content):
+    def base64_decoder(self, content: str) -> str:
         decoded = base64.b64decode(content)
         try:
             utf8 = str(decoded, 'utf-8')

@@ -1,12 +1,11 @@
-from selenium import webdriver
-import os
-import platform
+from typing import Dict, List, Optional
+
 
 class CookieAuditor:
     def __init__(self, browser):
         self.browser = browser
 
-    def findVulnerableCookies(self):
+    def findVulnerableCookies(self) -> Dict[str, Optional[bool]]:
         critical_cookies = {'secure': [], 'httpOnly': []}
         vulnerable = {'secure': None, 'httpOnly': None}
         if not self.browser.login_oracle():
@@ -45,7 +44,7 @@ class CookieAuditor:
 
         return vulnerable
 
-    def findAuthCookies(self):
+    def findAuthCookies(self) -> List[List[Dict[str, str]]]:
         # Retrieve Cookies
         cookie_list_unfiltered = self.browser.get_cookies()
         cookie_list = [c for c in cookie_list_unfiltered if not c['secure'] or not c['httpOnly']]
@@ -54,7 +53,7 @@ class CookieAuditor:
         # e.g. if Cookie A is sufficient enough to login, every other set including A can be skipped: A -> skip_enabling_set
         # e.g. if we have 4 Cookies A,B,C,D and A,B,C is not sufficient enough to login implies that we need D to login
         # --> D will be put in skip_disabling_set and if a set does not contain at least 1 elem in that set can be skipped as well
-        cookie_set = [i for i in range(0,len(cookie_list))]
+        cookie_set = [i for i in range(0, len(cookie_list))]
         bot_set = [[]]
         top_set = [cookie_set[:]]
 
@@ -64,13 +63,13 @@ class CookieAuditor:
         end_result = set()
 
         level = 0
-        total_counter =0
+        total_counter = 0
 
         while level < len(cookie_set):
             if level % 2 == 0:
                 bot_set_copy = bot_set[:]
                 bot_set = []
-                duplicate_array = []        # arrays tested at this level
+                duplicate_array = []  # arrays tested at this level
                 for array in bot_set_copy:
                     for elem in cookie_set:
                         tmp = array[:]
@@ -79,16 +78,16 @@ class CookieAuditor:
                         if elem not in tmp:
                             tmp.append(elem)
                             tmp.sort()
-                            #print("try: ",tmp)
-                            if tmp not in duplicate_array: #check if not only permutation
+                            # print("try: ",tmp)
+                            if tmp not in duplicate_array:  # check if not only permutation
                                 duplicate_array.append(tmp)
-                                for f in b_filter:          # check if combination can be skipped because subset is already sufficient
+                                for f in b_filter:  # check if combination can be skipped because subset is already sufficient
                                     if set(tuple(f)).issubset(tuple(tmp)):
                                         skip_b = True
                                         break
                                 if not t_filter:
                                     skip_t = False
-                                for f in t_filter:          # check if combination can be skipped because subset is already sufficient
+                                for f in t_filter:  # check if combination can be skipped because subset is already sufficient
                                     if tuple([f]) in tuple(tmp):
                                         skip_t = False
                                         break
@@ -114,13 +113,13 @@ class CookieAuditor:
                             tmp.remove(elem)
                             tmp.sort()
                             removed_elem = elem
-                            for f in b_filter:          # check if combination can be skipped because subset is already sufficient
+                            for f in b_filter:  # check if combination can be skipped because subset is already sufficient
                                 if set(tuple(f)).issubset(tuple(tmp)):
                                     skip_b = True
                                     break
                             if not t_filter_copy:
                                 skip_t = False
-                            for f in t_filter_copy:          # check if combination can be skipped because subset is already sufficient
+                            for f in t_filter_copy:  # check if combination can be skipped because subset is already sufficient
                                 if tuple([f]) in tuple(tmp):
                                     skip_t = False
                                     break
@@ -134,16 +133,16 @@ class CookieAuditor:
                                 elif removed_elem not in t_filter:
                                     t_filter.append(removed_elem)
             level += 1
-        return [( [cookie_list[elem] for elem in comb]) for comb in end_result]
+        return [([cookie_list[elem] for elem in comb]) for comb in end_result]
 
-    def check_cookie_set(self, cookie_set=[]):
+    def check_cookie_set(self, cookie_set: List[Dict[str, str]] = []) -> bool:
         self.browser.delete_cookies()
         for cookie in cookie_set:
             self.browser.add_cookie(cookie)
         self.browser.refresh()
         return self.browser.login_oracle()
 
-    def __evaluate_cookies(self, cookie_set):
+    def __evaluate_cookies(self, cookie_set: List[Dict[str, str]]) -> bool:
         self.browser.delete_cookies(cookie_set)
         self.browser.refresh()
         return self.browser.login_oracle()
