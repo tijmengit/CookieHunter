@@ -27,7 +27,7 @@ class Browser:
         self.login_url = login_url
         self.register_url = register_url
         ext = extract(home_url)
-        self.identifier = ext.domain
+        self.identifier = ext.domain + "1234"
         self.db.add_new_webpage(self.identifier,
                                 {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
@@ -213,13 +213,14 @@ class Browser:
                 print(e)
 
         email_received = False
-        msgId, link = self.__verifyEmail(max_tries=3)
+        msgId, links = self.__verifyEmail(max_tries=3)
         if msgId:
             print("Verification mail received")
             email_received = True
-            self.browser.get(link)
-            sleep(3)
-            self.browser.close()
+            for link in links:
+                self.browser.get(link)
+                sleep(3)
+
             self.db.update_web_page(self.identifier, {'verified': True})
             self.emailVerifier.messageRead(msgId)
 
@@ -231,16 +232,16 @@ class Browser:
         else:
             return False
 
-    def __verifyEmail(self, max_tries: int = 6) -> Tuple[Optional[str], Optional[str]]:
+    def __verifyEmail(self, max_tries: int = 6) -> Tuple[Optional[str], list]:
         tries = 1
         while tries <= max_tries:
             delay = 2 ** tries
             sleep(delay)
-            msgId, link = self.emailVerifier.getUnreadEmailLinks(self.identifier, days=30)
-            if link:
-                return msgId, link
+            msgId, links = self.emailVerifier.getUnreadEmailLinks(self.identifier, max=30, days=30)
+            if len(links) > 0:
+                return msgId, links
             tries += 1
-        return None, None
+        return None, []
 
     def __fill_database(self, able_to_fill_register: bool, able_to_fill_login: bool,
                         registered: bool, captcha: bool, creds_for_register: Dict[str, str]) -> None:
