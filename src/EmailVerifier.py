@@ -3,7 +3,7 @@ import os.path
 import base64
 import re
 from typing import Tuple, Optional, List, Any
-
+from bs4 import BeautifulSoup
 from googleapiclient.discovery import build
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.auth.transport.requests import Request
@@ -39,10 +39,10 @@ class EmailVerifier:
 
         self.service = build('gmail', 'v1', credentials=creds)
 
-    def getUnreadEmailLinks(self, identifier: str, max: int = 10, days: int = 1) -> Tuple[Optional[str], Optional[str]]:
+    def getUnreadEmailLinks(self, identifier: str, max: int = 10, days: int = 1) -> Tuple[Any, list]:
 
         # request a list of all the messages
-        result = self.service.users().messages().list(userId='me', labelIds=['UNREAD', 'INBOX', 'CATEGORY_UPDATES'],
+        result = self.service.users().messages().list(userId='me', labelIds=['UNREAD', 'INBOX'],
                                                       q=f'newer_than:{days}d', maxResults=max).execute()
         messages = result.get('messages')
         # iterate through all the messages
@@ -59,20 +59,39 @@ class EmailVerifier:
                 if found_identifier == identifier:
                     # The Body of the message is in Encrypted format. So, we have to decode it.
                     # Get the data and decode it with base 64 decoder.
-                    parts = payload.get('parts')[0]
-                    data = parts['body']['data']
-                    data = data.replace("-", "+").replace("_", "/")
-                    decoded_data = base64.urlsafe_b64decode(data).decode('ascii')
-                    regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+                    verifyLinks = []
+                    for part in payload.get('parts'):
+                        data = part['body']['data']
+                        data = data.replace("-", "+").replace("_", "/")
 
-                    links = re.findall(regex, decoded_data)
-                    keywords = ['verify', 'verification', 'accept']
-                    for link in links:
-                        if any(x in link for x in keywords):
-                            return msg['id'], link
+
+                        links = self.__findLinks(data, part['mimeType'])
+                        keywords = ['verify', 'verification', 'accept', 'click']
+                        for link in links:
+                            if any(x in link for x in keywords):
+                                verifyLinks.append(link)
+                    if len(verifyLinks) > 0:
+                        return msg['id'], verifyLinks
+
             except:
                 pass
-        return None, None
+        return None, []
+
+    def __findLinks(self, data, type):
+        decoded_data = base64.urlsafe_b64decode(data)
+
+        if type == 'text/plain':
+            decoded_data = decoded_data.decode('ASCII')
+            regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
+            return re.findall(regex, decoded_data)
+        if type == 'text/html':
+            decoded_data = decoded_data.decode('utf-8', 'html')
+            soup = BeautifulSoup(decoded_data)
+            links = []
+            for link in soup.findAll('a'):
+                links.append(link.get('href'))
+            return links
+        return []
 
     def __getIdentifier(self, headers: List[Any]) -> Optional[str]:
         to_address = None
