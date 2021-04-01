@@ -39,7 +39,7 @@ class Browser:
         self.login_url = login_url
         self.register_url = register_url
         ext = tldextract.extract(home_url)
-        self.identifier = ext.domain+"104"
+        self.identifier = ext.domain+"000"
         self.db.add_new_webpage(self.identifier, {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
         self.fields = ["email", "password", "name", "username"]
@@ -47,7 +47,7 @@ class Browser:
         self.credentials["email"] = f'cookiehunterproject+{self.identifier}@gmail.com'
         self.credentials["password"] = "passwordRandom123!"
         self.credentials["name"] = "Janssen"
-        self.credentials["username"] = "CookieHunter000007"
+        self.credentials["username"] = "CookieHunter000"
         self.synonyms = {}
         self.synonyms["email"] = ['user_email', 'email', 'e_mail', 'useremail', 'userEmail', 'mail', 'uemail',
                                   'User_email', 'E_mail' , 'UserEmail', 'Mail', 'Uemail',
@@ -206,7 +206,6 @@ class Browser:
         if msgId:
             print("Verification mail received")
             email_received = True
-            self.browser.send_keys(Keys.COMMAND + 't')
             self.browser.get(link)
             sleep(3)
             self.db.update_web_page(self.identifier, {'verified': True})

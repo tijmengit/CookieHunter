@@ -81,7 +81,7 @@ class PrivacyAuditor:
     def inspect_urls(self, browser: WebDriver, urls: List[str]) -> Set[str]:
         leaks = set()
         for url in urls:
-            decoded = self.base64_finder(page_url)
+            decoded = self.base64_finder(url)
 
             for info_type, info in self.information.items():
                 page_url = urlparse.unquote(url)

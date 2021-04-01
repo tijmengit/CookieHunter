@@ -32,7 +32,7 @@ class EmailVerifier:
                 creds.refresh(Request())
             else:
                 flow = InstalledAppFlow.from_client_secrets_file(
-                    './../data/credentials.json', SCOPES)
+                    '../data/credentials.json', SCOPES)
                 creds = flow.run_local_server(port=0)
             # Save the credentials for the next run
             with open('../data/token.pickle', 'wb') as token:
@@ -68,7 +68,7 @@ class EmailVerifier:
                     regex = 'http[s]?://(?:[a-zA-Z]|[0-9]|[$-_@.&+]|[!*\(\),]|(?:%[0-9a-fA-F][0-9a-fA-F]))+'
 
                     links = re.findall(regex, decoded_data)
-                    keywords = ['verify', 'verification', 'accept']
+                    keywords = ['verify', 'verification', 'accept', 'Verify']
                     for link in links:
                         if any(x in link for x in keywords):
                             return msg['id'], link

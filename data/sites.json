@@ -2,22 +2,27 @@
   {
     "home_url": "https://www.goodreads.com",
     "login_url": "https://www.goodreads.com/user/sign_in",
-  "register_url": "https://www.goodreads.com/user/sign_up"
-  },
-    {
-    "home_url": "https://www.overleaf.com/",
-    "login_url": "https://www.overleaf.com/login",
-  "register_url": "https://www.overleaf.com/register"
-  },
-      {
-    "home_url": "tweakers.net",
-    "login_url": "https://tweakers.net/my.tnet/login/",
-  "register_url": "https://tweakers.net/my.tnet/register/"
+    "register_url": "https://www.goodreads.com/user/sign_up"
   },
   {
-    "home_url": "",
-    "login_url": "",
-  "register_url": "https://en.wikipedia.org/w/index.php?title=Special:CreateAccount&returnto=Main+Page"
+    "home_url": "https://www.chess.com/",
+    "login_url": "https://www.chess.com/login",
+    "register_url": "https://www.chess.com/register"
+  },
+      {
+    "home_url": "https://www.investopedia.com/",
+    "login_url": "https://www.investopedia.com/auth/realms/investopedia/login-actions/authenticate?client_id=inv-simulator-conf&tab_id=izKFWnhZmNU",
+    "register_url": "https://www.investopedia.com/auth/realms/investopedia/protocol/openid-connect/registrations?scope=email&response_type=code&approval_prompt=auto&redirect_uri=https://www.investopedia.com/simulator/home.aspx&client_id=inv-simulator-conf"
+  },
+     {
+    "home_url": "https://edition.cnn.com/",
+    "login_url": "https://edition.cnn.com/account/log-in",
+    "register_url": "https://edition.cnn.com/account/register"
+  },
+       {
+    "home_url": "https://www.washingtonpost.com/",
+    "login_url": "https://www.washingtonpost.com/subscribe/signin?next_url=https%3A%2F%2Fwww.washingtonpost.com&nid=top_pb_signin&arcId=&itid=nav_sign_in",
+    "register_url": "https://www.washingtonpost.com/subscribe/signup?next_url=https%3A%2F%2Fwww.washingtonpost.com&nid=top_pb_signin&arcId=&itid=nav_sign_in"
   }
 ]
 

@@ -7,7 +7,7 @@ class DatabaseManager:
 
     def __init__(self):
         if not firebase_admin._apps:
-            cred = credentials.Certificate("./../data/database_cred.json")
+            cred = credentials.Certificate("../data/database_cred.json")
             firebase_admin.initialize_app(cred)
         self.db = firestore.client()
 

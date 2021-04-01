@@ -8,10 +8,10 @@ import csv
 if __name__ == "__main__":
     PATH = os.getenv(
         "LOCALAPPDATA") + "/ChromeDriver/chromedriver" if platform.system() == "Windows" else "/usr/local/sbin/chromedriver"
-    with open('../data/top-1m.csv') as sites_file:
+    with open('./data/top-1m.csv') as sites_file:
         sites = csv.reader(sites_file, delimiter=',')
         line_count=0
-        start_at = 10026
+        start_at = 1
         for row in sites:
             if line_count < start_at:
                 line_count += 1
