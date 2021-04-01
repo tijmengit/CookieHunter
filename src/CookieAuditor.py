@@ -46,13 +46,26 @@ class CookieAuditor:
 
     def findAuthCookies(self) -> List[List[Dict[str, str]]]:
         # Retrieve Cookies
+        print("first check if logged in or not")
+        if not self.browser.login_oracle():
+            self.browser.login()
+            print("after login check again:", self.browser.login_oracle())
         cookie_list_unfiltered = self.browser.get_cookies()
+        print("SIZE OF UNFILTERED COOKIE LIST: ", len(cookie_list_unfiltered))
         cookie_list = [c for c in cookie_list_unfiltered if not c['secure'] or not c['httpOnly']]
+        print("SIZE OF COOKIE LIST: ", len(cookie_list))
+        print("COOKIES: ", cookie_list)
         # Initialization from bottom and top, starting with full set and with single cookies
         # There will be 2 skipping sets which will be compared with to check if a set still has to be evaluated or not
         # e.g. if Cookie A is sufficient enough to login, every other set including A can be skipped: A -> skip_enabling_set
         # e.g. if we have 4 Cookies A,B,C,D and A,B,C is not sufficient enough to login implies that we need D to login
         # --> D will be put in skip_disabling_set and if a set does not contain at least 1 elem in that set can be skipped as well
+        print("AM I LOGGED IN: ", self.browser.login_oracle())
+        print("ok first checking if when puttin all cookies if that works out:")
+        print(self.check_cookie_set(cookie_list_unfiltered))
+        print("check if cookie list is still _OK_:", len(cookie_list_unfiltered))
+
+
         cookie_set = [i for i in range(0, len(cookie_list))]
         bot_set = [[]]
         top_set = [cookie_set[:]]
@@ -72,6 +85,8 @@ class CookieAuditor:
                 duplicate_array = []  # arrays tested at this level
                 for array in bot_set_copy:
                     for elem in cookie_set:
+                        print("ok again checking if when puttin all cookies if that works out:")
+                        print(self.check_cookie_set(cookie_list_unfiltered))
                         tmp = array[:]
                         skip_b = False
                         skip_t = True
@@ -132,7 +147,12 @@ class CookieAuditor:
                                     end_result.add(tuple(tmp))
                                 elif removed_elem not in t_filter:
                                     t_filter.append(removed_elem)
+            print(level)
             level += 1
+            print(end_result)
+
+            print("ok again checking if when puttin all cookies if that works out:")
+            print(self.check_cookie_set(cookie_list_unfiltered))
         return [([cookie_list[elem] for elem in comb]) for comb in end_result]
 
     def check_cookie_set(self, cookie_set: List[Dict[str, str]] = []) -> bool:

@@ -30,17 +30,24 @@ def fullFlow(page, PATH, privacy_auditor):
         # LOGIN
         creds = document['register_data']
         browser.login()
+        sleep(5)
+        print("Start Login Oracle")
         if not browser.login_oracle():
             raise Exception(f'Could not login for: {page}')
-
         # COOKIE AUDIT
+        print("Start Cookie Auditor")
         cookie_auditor = CookieAuditor(browser)
+        print("Start Vulnerable Cookie Auditor")
         vulnerable = cookie_auditor.findVulnerableCookies()
+        print("Finished Vulnerable Cookie Auditor")
         browser.db.update_web_page(ref, {"vulnerable": vulnerable})
         vulnerable_cookies = []
         if vulnerable['secure'] or vulnerable['httpOnly']:
+            print("Start Authentication Cookie Auditor")
+            sleep(10)
             vulnerable_cookies = cookie_auditor.findAuthCookies()
-
+            print("Finished Authentication Cookie Auditor")
+            print("DAS SIND DIE AUTH COOKIES", vulnerable_cookies)
         if not vulnerable_cookies:
             browser.db.update_web_page(ref, {"leaks": []})
             return

@@ -145,7 +145,6 @@ class Browser:
         logged_in = False
         second_step = False
         self.browser.get(self.login_url)
-
         for field in self.fields:
             elements = self.__generic_element_finder(f"//input[@type='{field}']", self.synonyms[field], field)
             if not elements:
