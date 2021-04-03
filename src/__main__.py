@@ -6,6 +6,7 @@ import json
 
 
 def fullFlow(page, PATH, privacy_auditor):
+    print(f'========== WEBSITE: {page["home_url"]} ==========')
     try:
         browser = Browser(page['home_url'], page['login_url'], page['register_url'], PATH)
         ref = browser.identifier
@@ -14,6 +15,7 @@ def fullFlow(page, PATH, privacy_auditor):
             raise Exception(f'Could not fetch document for: {ref}')
 
         # REGISTER
+        print(f'========== REGISTERATION ==========')
         register_in_db = False
         try:
             register_in_db = document['registered']
@@ -28,20 +30,30 @@ def fullFlow(page, PATH, privacy_auditor):
                 raise Exception(f'Could not fetch document for: {ref}')
 
         # LOGIN
+        print(f'========== LOGIN ==========')
         creds = document['register_data']
         browser.login()
         sleep(5)
         if not browser.login_oracle():
+            print(f'========== ERROR: Login was not successful! ==========')
             raise Exception(f'Could not login for: {page}')
 
         # COOKIE AUDIT
+        print('########### COOKIE AUDITOR ###########')
         cookie_auditor = CookieAuditor(browser)
+        print(f'========== 1. DETECT VULNERABLE COOKIES ==========')
         vulnerable = cookie_auditor.findVulnerableCookies()
+        v_secure = vulnerable['secure']
+        v_http = vulnerable['httpOnly']
+        print(f'========== Vulnerable Cookies [secure]: {v_secure} ==========')
+        print(f'========== Vulnerable Cookies [httpOnly]: {v_http} ==========')
         browser.db.update_web_page(ref, {"vulnerable": vulnerable})
         vulnerable_cookies = []
         if vulnerable['secure'] or vulnerable['httpOnly']:
+            print(f'========== 2. DETECT AUTHENTICATION COOKIES ==========')
             vulnerable_cookies = cookie_auditor.findAuthCookies()
-
+            print(f'========== These are the Authentication Cookie Combinations:  ==========')
+            print(vulnerable_cookies)
         if not vulnerable_cookies:
             browser.db.update_web_page(ref, {"leaks": []})
             return
@@ -60,7 +72,8 @@ if __name__ == "__main__":
     with open('../data/sites.json') as file:
         pages = json.load(file)
     PATH = os.getenv(
-        "LOCALAPPDATA") + "/ChromeDriver/chromedriver" if platform.system() == "Windows" else "/usr/local/sbin/chromedriver"
+        "LOCALAPPDATA") + "/ChromeDriver/chromedriver" if platform.system() == "Windows" else "../chromedriver"
     privacy_auditor = PrivacyAuditor(PATH, ['--headless'])
+    print('########### COOKIE HUNTER ###########')
     for page in pages:
         fullFlow(page, PATH, privacy_auditor)
