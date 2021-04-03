@@ -61,7 +61,7 @@ def getSynonyms() -> dict:
                                          'user[username]',
                                          'Username', 'nc_username', 'nc_username_required', 'Gebruikersnaam'
                                          ], 'cookie-accept': ['accept', 'confirm', 'choice', 'accept all cookies',
-                                                              'I accept', "I Consent", "allow all cookies"],
+                                                              'I accept', "I Consent", "allow all cookies", "accept all"],
                 'register': ['register', 'registration', 'sign up', 'signup', 'createuser', 'create user'],
                 'login': ['login', 'log-in', 'log in']}
 
