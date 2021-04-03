@@ -43,10 +43,8 @@ def fullFlow(page, PATH, privacy_auditor):
         cookie_auditor = CookieAuditor(browser)
         print(f'========== 1. DETECT VULNERABLE COOKIES ==========')
         vulnerable = cookie_auditor.findVulnerableCookies()
-        v_secure = vulnerable['secure']
-        v_http = vulnerable['httpOnly']
-        print(f'========== Vulnerable Cookies [secure]: {v_secure} ==========')
-        print(f'========== Vulnerable Cookies [httpOnly]: {v_http} ==========')
+        print(f'========== Vulnerable Cookies [secure]: {vulnerable["secure"]} ==========')
+        print(f'========== Vulnerable Cookies [httpOnly]: {vulnerable["httpOnly"]} ==========')
         browser.db.update_web_page(ref, {"vulnerable": vulnerable})
         vulnerable_cookies = []
         if vulnerable['secure'] or vulnerable['httpOnly']:
@@ -74,6 +72,6 @@ if __name__ == "__main__":
     PATH = os.getenv(
         "LOCALAPPDATA") + "/ChromeDriver/chromedriver" if platform.system() == "Windows" else "../chromedriver"
     privacy_auditor = PrivacyAuditor(PATH, ['--headless'])
-    print('########### COOKIE HUNTER ###########')
+    print('########### COOKIE HUNTER \U0001F36A ###########')
     for page in pages:
         fullFlow(page, PATH, privacy_auditor)
