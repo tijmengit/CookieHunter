@@ -30,6 +30,7 @@ def fullFlow(page, PATH, privacy_auditor):
         # LOGIN
         creds = document['register_data']
         browser.login()
+        sleep(5)
         if not browser.login_oracle():
             raise Exception(f'Could not login for: {page}')
 
