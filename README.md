@@ -13,8 +13,10 @@ On Mac, place the chromedriver in:
 ```
 /usr/local/sbin/
 ```
-=====TODO: PATH FOR WINDOWS USERS!!!!!!!!!!!!!!!!!=========
-
+On Windows, first get the path from LOCALAPPDATA environment variable and then place the chromedriver in:
+```
+<LOCALAPPDATA path>/ChromeDriver/chromedriver
+```
 ### Credentials
 ### Database
 
