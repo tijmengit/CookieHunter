@@ -18,7 +18,7 @@ def fullFlow(page, PATH, privacy_auditor):
 
         # REGISTER
         print('')
-        print(f'========== REGISTERATION ==========')
+        print(f'========== REGISTRATION ==========')
         register_in_db = False
         try:
             register_in_db = document['registered']
