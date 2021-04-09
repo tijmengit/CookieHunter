@@ -1,24 +1,32 @@
 # CookieHunter
-
-## Database
-Firebase database (cloud firestore):
-https://console.firebase.google.com/
-
-Login with cookiehunterproject@gmail.com account (password in discord)
-
 ## Setup
+Clone repo and install requirements
+```
+git clone https://github.com/tijmengit/CookieHunter.git
+cd CookieHunter
+pip install -r requirements.txt
+```
+
 ### Chromedriver
 In order to run the Cookie Hunter Hacking Lab tool, you should download the Google Chromedriver from https://chromedriver.chromium.org.
 On Mac, place the chromedriver in:
 ```
 /usr/local/sbin/
 ```
-On Windows, first get the path from LOCALAPPDATA environment variable and then place the chromedriver in:
+On Windows:
 ```
-<LOCALAPPDATA path>/ChromeDriver/chromedriver
+%LOCALAPPDATA%/ChromeDriver/
 ```
-### Credentials
 ### Database
+Create a new Firebase project at https://console.firebase.google.com/.
+Under Project settings -> Service accounts, generate a new private key.
+Move .json to /data/database-cred.json
+
+### Gmail Credentials
+Activate the Gmail API at https://console.cloud.google.com/
+For the Gmail API, create a OAuth 2.0 Client ID
+Download the .json linked to the new Client ID
+Move .json to /data/credentials.json
 
 ## How to run
 The system is created as a command line tool. There are three options on how to use the tool.
