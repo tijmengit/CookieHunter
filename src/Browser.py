@@ -8,9 +8,9 @@ from selenium.webdriver.remote.webelement import WebElement
 from tldextract import extract
 from typing import Optional, Tuple, Dict, List, Union
 import urllib.parse as urlparse
-from src.DatabaseManager import DatabaseManager
-from src.EmailVerifier import EmailVerifier
-from src.Helper import *
+from DatabaseManager import DatabaseManager
+from EmailVerifier import EmailVerifier
+from Helper import *
 
 
 class Browser:
@@ -27,7 +27,7 @@ class Browser:
         self.login_url = login_url
         self.register_url = register_url
         ext = extract(home_url)
-        self.identifier = ext.domain + "1234"
+        self.identifier = ext.domain + "1"
         self.db.add_new_webpage(self.identifier,
                                 {'home_url': home_url, 'login_url': login_url, 'register_url': register_url})
         # Credentials
@@ -172,7 +172,7 @@ class Browser:
         return list(iterator)
 
     def __fill_attributes(self) -> Dict[str, str]:
-        creds_for_register = {}
+        creds_filled = {}
         self.attribute_assignments = {}
         self.label_assignments = {}
         # label and input field searching done here
@@ -193,21 +193,21 @@ class Browser:
                         if id_from_element is not None and id_value in id_from_element:
                             self.attribute_assignments[input_element] = field
                             input_element.send_keys(self.credentials[field])
-                            creds_for_register[field] = self.credentials[field]
+                            creds_filled[field] = self.credentials[field]
 
         for web_element, field in self.attribute_assignments.items():
             if web_element.get_attribute("value") == "":
                 web_element.send_keys(self.credentials[field])
-                creds_for_register[field] = self.credentials[field]
+                creds_filled[field] = self.credentials[field]
 
-        return creds_for_register
+        return creds_filled
 
     def __submit_registration(self, creds_for_register: Dict[str, str]) -> bool:
         for web_element, field in self.attribute_assignments.items():
             try:
+                sleep(1)
                 web_element.submit()
                 print(f'========== Registration Form submitted ==========')
-
                 break
             except Exception as e:
                 print(e)

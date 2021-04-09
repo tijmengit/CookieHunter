@@ -62,7 +62,7 @@ class PrivacyAuditor:
         print(cookie_leaks, '\n')
 
         print('========== URL Leaks ===========')
-        url_leaks = self.inspect_urls(browser, pages)
+        url_leaks = self.inspect_urls(pages)
         print(url_leaks, '\n')
 
         print('========= Storage Leaks ========')
@@ -81,7 +81,7 @@ class PrivacyAuditor:
     def inspect_urls(self, urls: List[str]) -> Set[str]:
         leaks = set()
         for url in urls:
-            decoded = self.base64_finder(page_url)
+            decoded = self.base64_finder(url)
 
             for info_type, info in self.information.items():
                 page_url = urlparse.unquote(url)
