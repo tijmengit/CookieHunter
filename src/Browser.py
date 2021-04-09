@@ -67,10 +67,10 @@ class Browser:
 
         # Comment this out to submit registration:
         if len(creds_for_register) > 0:
-            print("At least one input field has been filled")
+            # print("At least one input field has been filled")
             return self.__submit_registration(creds_for_register)
         else:
-            print("No submission done")
+            # print("No submission done")
             return False
 
     def registration_oracle(self, creds_for_register: Dict[str, str]) -> bool:
@@ -126,7 +126,7 @@ class Browser:
             for web_element, field in self.attribute_assignments.items():
                 try:
                     web_element.submit()
-                    print('Form submitted')
+                    print(f'========== Login Form Submitted ==========')
                     break
                 except Exception as e:
                     print(e)
@@ -161,7 +161,6 @@ class Browser:
                 if value in self.browser.page_source:
                     logged_in = True
 
-        print("Login Oracle - Logged in: ", logged_in)
         return logged_in
 
     def __login_oracle_help(self, website: str):
@@ -207,7 +206,8 @@ class Browser:
         for web_element, field in self.attribute_assignments.items():
             try:
                 web_element.submit()
-                print('Form submitted')
+                print(f'========== Registration Form submitted ==========')
+
                 break
             except Exception as e:
                 print(e)
