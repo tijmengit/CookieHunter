@@ -139,8 +139,6 @@ class Browser:
         Step 2: Check if Account Identifiers are present + Logout Button
         If True: We are logged in
         Else: We are not logged in
-        Step 3: Check false positves
-        [send HTTP request without any cookies and consult login oracle once again]
         """
         logged_in = False
         second_step = False
